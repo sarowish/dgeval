@@ -1,5 +1,6 @@
 #pragma once
 
+#include <fstream>
 #include <string>
 #include <vector>
 #include "context.hpp"
@@ -9,6 +10,8 @@ namespace dgeval::ast {
 
 class Printer: public Visitor {
   public:
+    Printer(const std::string& file_name) : output(file_name + ".json") {}
+
     void visit_program(Program& program) override;
     void visit_statement_list(StatementList& statements) override;
     void visit_expression_statement(ExpressionStatement& statement) override;
@@ -21,9 +24,12 @@ class Printer: public Visitor {
     void visit_identifier(Identifier& identifier) override;
     void visit_binary_expression(BinaryExpression& binary_expr) override;
     void visit_unary_expression(UnaryExpression& unary_expr) override;
+
+    std::ofstream output;
 };
 
 void join_strings(
+    std::ofstream& output,
     std::vector<std::string>& strings,
     const std::string& delimiter
 );

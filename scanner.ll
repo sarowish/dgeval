@@ -69,15 +69,15 @@ loc.step();
 {number}        { double number = atof(yytext); return Parser::make_NUMBER(number, loc); }
 {identifier}    return Parser::make_IDENTIFIER(yytext, loc);
 
-\"              { yy_push_state(STRING); driver.buffer.clear(); }
+\"              { yy_push_state(STRING); driver.buffer.clear(); driver.raw_buffer.clear(); }
 
 <STRING>{
   \"            { yy_pop_state(); return Parser::make_STRING(driver.buffer, loc); }
-  [^\"\\\n]+    driver.buffer += yytext;
-  \\n           driver.buffer += '\n';
-  \\\\          driver.buffer += '\\';
-  \\\"          driver.buffer += '\"';
-  {hex_escape}  driver.buffer += strtol(yytext + 2, NULL, 16);
+  [^\"\\\n]+    { driver.buffer += yytext; driver.raw_buffer += yytext; }
+  \\n           { driver.buffer += '\n'; driver.raw_buffer += yytext; }
+  \\\\          { driver.buffer += '\\'; driver.raw_buffer += yytext; }
+  \\\"          { driver.buffer += '\"'; driver.raw_buffer += yytext; }
+  {hex_escape}  { driver.buffer += strtol(yytext + 2, NULL, 16); driver.raw_buffer += yytext; }
   \n            throw Parser::syntax_error(loc, "");
   <<EOF>>       throw Parser::syntax_error(loc, "");
   .             throw Parser::syntax_error(loc, "");

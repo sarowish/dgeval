@@ -14,17 +14,15 @@ auto main(int argc, char** argv) -> int {
 
     Driver driver;
 
-    if (driver.parse(argv[1])) {
-        return 1;
-    }
+    int res = driver.parse(argv[1]);
 
     dgeval::ast::Dependency dependency;
     dgeval::ast::Checker checker;
-    dgeval::ast::Printer printer;
+    dgeval::ast::Printer printer(argv[1]);
 
     driver.program->accept(dependency);
     driver.program->accept(checker);
     driver.program->accept(printer);
 
-    return 0;
+    return res;
 }

@@ -3,4 +3,5 @@ sample*
 parser.cpp
 parser.hpp
 scanner.cpp
+location.hpp
 project02syn

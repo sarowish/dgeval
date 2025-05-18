@@ -16,20 +16,20 @@ void Dependency::visit_program(Program& program) {
 
     std::queue<size_t> queue;
     std::vector<int> in_degree(statements->inner.size());
+    std::vector<std::unordered_set<size_t>> relations(statements->inner.size());
     std::vector<std::unique_ptr<Statement>> sorted;
     std::vector<std::unique_ptr<Statement>> circular;
 
-    // todo: remove unresolved variables
-
-    for (auto const& [symbol, idxs] : dependents) {
-        std::println("{} provides: {}", symbol, idxs);
-        for (auto idx : idxs) {
-            in_degree[idx] += 1;
+    for (auto const& [symbol, rel] : symbols) {
+        if (!rel.defines.empty()) {
+            program.symbol_table[symbol] = TypeDescriptor();
         }
-    }
-
-    for (size_t idx = 0; idx < defined_symbols.size(); idx++) {
-        std::println("{} defines: {}", idx, defined_symbols[idx]);
+        for (auto parent : rel.defines) {
+            for (auto child : rel.depends) {
+                relations[parent].insert(child);
+                ++in_degree[child];
+            }
+        }
     }
 
     for (size_t idx = 0; idx < in_degree.size(); ++idx) {
@@ -42,11 +42,9 @@ void Dependency::visit_program(Program& program) {
         size_t idx = queue.front();
         sorted.push_back(std::move(statements->inner[idx]));
 
-        for (auto const& symbol : defined_symbols[idx]) {
-            for (auto idx : dependents[symbol]) {
-                if (--in_degree[idx] == 0) {
-                    queue.push(idx);
-                }
+        for (auto const& idx : relations[idx]) {
+            if (--in_degree[idx] == 0) {
+                queue.push(idx);
             }
         }
     }
@@ -65,7 +63,6 @@ void Dependency::visit_program(Program& program) {
 void Dependency::visit_statement_list(StatementList& statements) {
     for (size_t idx = 0; idx < statements.inner.size(); ++idx) {
         statement_idx = idx;
-        defined_symbols.emplace_back();
         statements.inner[idx]->accept(*this);
     }
 }
@@ -76,7 +73,7 @@ void Dependency::visit_expression_statement(ExpressionStatement& statement) {
 
 void Dependency::visit_wait_statement(WaitStatement& statement) {
     for (auto const& id : statement.id_list) {
-        dependents[id].insert(statement_idx);
+        symbols[id].depends.insert(statement_idx);
     }
 
     statement.expression->accept(*this);
@@ -92,14 +89,20 @@ void Dependency::visit_boolean(BooleanLiteral& boolean) {}
 
 void Dependency::visit_array(ArrayLiteral& array) {
     opcode = Opcode::None;
-    array.items->accept(*this);
+    if (array.items) {
+        array.items->accept(*this);
+    }
 }
 
 void Dependency::visit_identifier(Identifier& identifier) {
+    if (available_functions.contains(identifier.id)) {
+        return;
+    }
+
     if (opcode == Opcode::Assign) {
-        defined_symbols[statement_idx].insert(identifier.id);
-    } else if (opcode != Opcode::Call || dependents.contains(identifier.id)) {
-        dependents[identifier.id].insert(statement_idx);
+        symbols[identifier.id].defines.insert(statement_idx);
+    } else if (opcode != Opcode::Call) {
+        symbols[identifier.id].depends.insert(statement_idx);
     }
 }
 

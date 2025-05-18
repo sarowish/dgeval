@@ -22,5 +22,6 @@ class Driver {
     std::unique_ptr<dgeval::ast::Program> program;
     std::ofstream output;
     std::string buffer;
+    std::string raw_buffer;
     dgeval::location location;
 };

@@ -8,6 +8,11 @@
 
 namespace dgeval::ast {
 
+struct Relations {
+    std::unordered_set<size_t> depends;
+    std::unordered_set<size_t> defines;
+};
+
 class Dependency: public Visitor {
   public:
     void visit_program(Program& program) override;
@@ -25,8 +30,8 @@ class Dependency: public Visitor {
 
     Opcode opcode;
     size_t statement_idx;
-    std::vector<std::unordered_set<std::string>> defined_symbols;
-    std::unordered_map<std::string, std::unordered_set<size_t>> dependents;
+    std::unordered_map<std::string, Relations> symbols;
 };
+
 
 } // namespace dgeval::ast

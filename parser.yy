@@ -5,11 +5,12 @@
 %define api.namespace { dgeval }
 %define api.parser.class { Parser }
 %define api.value.type variant
+%define api.value.automove
 %define api.token.constructor
 
 %code requires {
-    #include <print>
     #include "context.hpp"
+    #include "ast.hpp"
 
     class Driver;
     class Lexer;
@@ -19,7 +20,7 @@
 %parse-param { Lexer& lexer }
 
 %locations
-%define api.location.file none
+%define api.location.file "location.hpp"
 %define parse.assert
 
 %code {
@@ -77,94 +78,89 @@
 
 %%
 
-program : statement_list                    { driver.program = std::make_unique<ast::Program>(std::move($1)); } ;
+program : statement_list                    { driver.program = std::make_unique<ast::Program>($1); } ;
 
-statement_list : statement                  { $$ = std::make_unique<ast::StatementList>(); $$->inner.push_back(std::move($1)); }
-               | statement_list statement   { $1->inner.push_back(std::move($2)); $$ = std::move($1); }
+statement_list : statement                  { $$ = std::make_unique<ast::StatementList>(); $$->inner.push_back($1); }
+               | statement_list statement   { $$ = $1; $$->inner.push_back($2); }
                ;
 
-statement : expression_statement    { $$ = std::move($1); } 
-          | wait_statement          { $$ = std::move($1); }
+statement : expression_statement
+          | wait_statement
           ;
 
-expression_statement : expression ";"         { $$ = std::make_unique<ast::ExpressionStatement>(@1.begin.line, std::move($1)); } ;
+expression_statement : expression ";"         { $$ = std::make_unique<ast::ExpressionStatement>(@1, $1); } ;
 
-wait_statement : "wait" identifier_list "then" expression ";"          { $$ = std::make_unique<ast::WaitStatement>(@1.begin.line, std::move($2), std::move($4)); } ;
+wait_statement : "wait" identifier_list "then" expression ";"          { $$ = std::make_unique<ast::WaitStatement>(@1, $2, $4); } ;
 
 identifier_list : IDENTIFIER                        { $$ = std::vector<std::string>(); $$.push_back($1); }
-                | identifier_list "," IDENTIFIER    { $1.push_back($3); $$ = std::move($1); }
+                | identifier_list "," IDENTIFIER    { $$ = $1; $$.push_back($3); }
                 ;
 
-expression : literal                    { $$ = std::move($1); }
-           | assignment                 { $$ = std::move($1); }
-           | function_call              { $$ = std::move($1); }
-           | array_access               { $$ = std::move($1); }
-           | conditional                { $$ = std::move($1); }
-           | arithmetic_expression      { $$ = std::move($1); }
-           | logical_expression         { $$ = std::move($1); }
-           | comparison_expression      { $$ = std::move($1); }
-           | negation_expression        { $$ = std::move($1); }
-           | "(" expression ")"         { $$ = std::move($2); }
-           | expression "," expression  { $$ = std::make_unique<ast::BinaryExpression>(@2.begin.line, std::move($1), std::move($3), ast::Opcode::Comma); }
+expression : literal
+           | assignment
+           | function_call
+           | array_access
+           | conditional
+           | arithmetic_expression
+           | logical_expression
+           | comparison_expression
+           | negation_expression
+           | "(" expression ")"         { $$ = $2; }
+           | expression "," expression  { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::Comma); }
            ;
 
-literal : STRING                        { $$ = std::make_unique<ast::StringLiteral>(@1.begin.line, std::move($1)); }
-        | NUMBER                        { $$ = std::make_unique<ast::NumberLiteral>(@1.begin.line, std::move($1)); }
-        | IDENTIFIER                    { $$ = std::make_unique<ast::Identifier>(@1.begin.line, std::move($1)); }
-        | "true"                        { $$ = std::make_unique<ast::BooleanLiteral>(@1.begin.line, true); }
-        | "false"                       { $$ = std::make_unique<ast::BooleanLiteral>(@1.begin.line, false); }
-        | "[" argument_list "]"         { $$ = std::make_unique<ast::ArrayLiteral>(@1.begin.line, std::move($2)); }
+literal : STRING                        { $$ = std::make_unique<ast::StringLiteral>(@1, $1, driver.raw_buffer); }
+        | NUMBER                        { $$ = std::make_unique<ast::NumberLiteral>(@1, $1); }
+        | IDENTIFIER                    { $$ = std::make_unique<ast::Identifier>(@1, $1); }
+        | "true"                        { $$ = std::make_unique<ast::BooleanLiteral>(@1, true); }
+        | "false"                       { $$ = std::make_unique<ast::BooleanLiteral>(@1, false); }
+        | "[" argument_list "]"         { $$ = std::make_unique<ast::ArrayLiteral>(@1, $2); }
         ;
 
-arithmetic_expression : expression "+" expression       { $$ = std::make_unique<ast::BinaryExpression>(@2.begin.line, std::move($1), std::move($3), ast::Opcode::Plus); }
-                      | expression "-" expression       { $$ = std::make_unique<ast::BinaryExpression>(@2.begin.line, std::move($1), std::move($3), ast::Opcode::Minus); }
-                      | expression "*" expression       { $$ = std::make_unique<ast::BinaryExpression>(@2.begin.line, std::move($1), std::move($3), ast::Opcode::Star); }
-                      | expression "/" expression       { $$ = std::make_unique<ast::BinaryExpression>(@2.begin.line, std::move($1), std::move($3), ast::Opcode::Slash); }
+arithmetic_expression : expression "+" expression       { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::Plus); }
+                      | expression "-" expression       { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::Minus); }
+                      | expression "*" expression       { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::Star); }
+                      | expression "/" expression       { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::Slash); }
                       ;                                                                                 
                                                                                                        
-logical_expression : expression "&&" expression         { $$ = std::make_unique<ast::BinaryExpression>(@2.begin.line, std::move($1), std::move($3), ast::Opcode::And); }
-                   | expression "||" expression         { $$ = std::make_unique<ast::BinaryExpression>(@2.begin.line, std::move($1), std::move($3), ast::Opcode::Or); }
+logical_expression : expression "&&" expression         { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::And); }
+                   | expression "||" expression         { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::Or); }
                    ;
 
-comparison_expression : expression "==" expression      { $$ = std::make_unique<ast::BinaryExpression>(@2.begin.line, std::move($1), std::move($3), ast::Opcode::Equal); }
-                      | expression "!=" expression      { $$ = std::make_unique<ast::BinaryExpression>(@2.begin.line, std::move($1), std::move($3), ast::Opcode::NotEqual); }
-                      | expression "<" expression       { $$ = std::make_unique<ast::BinaryExpression>(@2.begin.line, std::move($1), std::move($3), ast::Opcode::Less); }
-                      | expression ">" expression       { $$ = std::make_unique<ast::BinaryExpression>(@2.begin.line, std::move($1), std::move($3), ast::Opcode::Greater); }
-                      | expression "<=" expression      { $$ = std::make_unique<ast::BinaryExpression>(@2.begin.line, std::move($1), std::move($3), ast::Opcode::LessEqual); }
-                      | expression ">=" expression      { $$ = std::make_unique<ast::BinaryExpression>(@2.begin.line, std::move($1), std::move($3), ast::Opcode::GreaterEqual); }
+comparison_expression : expression "==" expression      { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::Equal); }
+                      | expression "!=" expression      { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::NotEqual); }
+                      | expression "<" expression       { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::Less); }
+                      | expression ">" expression       { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::Greater); }
+                      | expression "<=" expression      { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::LessEqual); }
+                      | expression ">=" expression      { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::GreaterEqual); }
                       ;
 
-negation_expression : "!" expression                    { $$ = std::make_unique<ast::UnaryExpression>(@1.begin.line, std::move($2), ast::Opcode::Not); }
-                    | "-" expression                    { $$ = std::make_unique<ast::UnaryExpression>(@1.begin.line, std::move($2), ast::Opcode::Negate); }
+negation_expression : "!" expression                    { $$ = std::make_unique<ast::UnaryExpression>(@1, $2, ast::Opcode::Not); }
+                    | "-" expression                    { $$ = std::make_unique<ast::UnaryExpression>(@1, $2, ast::Opcode::Negate); }
                     ;
 
-assignment : expression "=" expression                  { $$ = std::make_unique<ast::BinaryExpression>(@2.begin.line, std::move($1), std::move($3), ast::Opcode::Assign); } ;
+assignment : expression "=" expression                  { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::Assign); } ;
 
 conditional : expression "?" expression ":" expression  {
-                                                          $$ = std::make_unique<ast::BinaryExpression>(
-                                                              @2.begin.line,
-                                                              std::move($1),
-                                                              std::make_unique<ast::BinaryExpression>(
-                                                                  @4.begin.line,
-                                                                  std::move($3),
-                                                                  std::move($5),
-                                                                  ast::Opcode::Alt
-                                                              ),
-                                                              ast::Opcode::Conditional
-                                                          );
+                                                            $$ = std::make_unique<ast::BinaryExpression>(
+                                                                @2,
+                                                                $1,
+                                                                std::make_unique<ast::BinaryExpression>(@4, $3, $5, ast::Opcode::Alt),
+                                                                ast::Opcode::Conditional
+                                                            );
                                                         } ;
  
-array_access : expression "[" expression "]"            { $$ = std::make_unique<ast::BinaryExpression>(@2.begin.line, std::move($1), std::move($3), ast::Opcode::ArrayAccess); } ;
+array_access : expression "[" expression "]"            { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::ArrayAccess); } ;
 
-function_call : expression "(" argument_list ")"        { $$ = std::make_unique<ast::BinaryExpression>(@2.begin.line, std::move($1), std::move($3), ast::Opcode::Call); } ;
+function_call : expression "(" argument_list ")"        { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::Call); } ;
 
-argument_list : %empty
-              | expression      { $$ = std::move($1); }
+argument_list : %empty          { $$ = nullptr; }
+              | expression
               ;
 
 
 %%
 
-void dgeval::Parser::error(const location_type& loc, const std::string& m) {
-    std::println(driver.output, "Line {}: Syntax error.", loc.begin.line);
+void dgeval::Parser::error(const location& loc, const std::string& m) {
+    driver.program->messages.emplace_back(loc, "Syntax error");
 }

@@ -5,8 +5,10 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
+#include "location.hpp"
 #include "visitor.hpp"
 
 namespace dgeval::ast {
@@ -43,6 +45,11 @@ const std::array<std::string, 25> mnemonic = {
     "not", "aa",    "call",   "jmp",  "jf",  "id",   "const"
 };
 
+const std::array<std::string, 21> operator_symbol = {
+    "",  ",",  "=", "?", ":", "&&", "||", "==", "!=", "<", "<=",
+    ">", ">=", "+", "-", "*", "/",  "-",  "!",  "[]", "()"
+};
+
 enum class Type : std::uint8_t { None, Number, String, Boolean, Array };
 
 const std::array<std::string, 5> type_str =
@@ -50,10 +57,6 @@ const std::array<std::string, 5> type_str =
 
 class TypeDescriptor {
   public:
-    TypeDescriptor() = default;
-
-    TypeDescriptor(Type type) : type(type) {}
-
     auto operator==(TypeDescriptor other) const -> bool {
         return type == other.type && dimension == other.dimension;
     }
@@ -84,29 +87,82 @@ class TypeDescriptor {
     int dimension {};
 };
 
+const TypeDescriptor NUMBER(Type::Number);
+const TypeDescriptor STRING(Type::String);
+const TypeDescriptor BOOLEAN(Type::Boolean);
+
+class FunctionSignature {
+  public:
+    TypeDescriptor return_type;
+    int parameter_count;
+    std::vector<TypeDescriptor> parameters;
+};
+
+const std::unordered_map<std::string, FunctionSignature> available_functions = {
+    {"stddev", {NUMBER, 1, {{Type::Number, 1}}}},
+    {"mean", {NUMBER, 1, {{Type::Number, 1}}}},
+    {"count", {NUMBER, 1, {{Type::Number, 1}}}},
+    {"min", {NUMBER, 1, {{Type::Number, 1}}}},
+    {"max", {NUMBER, 1, {{Type::Number, 1}}}},
+    {"sin", {NUMBER, 1, {NUMBER}}},
+    {"cos", {NUMBER, 1, {NUMBER}}},
+    {"tan", {NUMBER, 1, {NUMBER}}},
+    {"pi", {NUMBER, 0}},
+    {"atan", {NUMBER, 1, {NUMBER}}},
+    {"asin", {NUMBER, 1, {NUMBER}}},
+    {"acos", {NUMBER, 1, {NUMBER}}},
+    {"exp", {NUMBER, 1, {NUMBER}}},
+    {"ln", {NUMBER, 1, {NUMBER}}},
+    {"print", {NUMBER, 1, {STRING}}},
+    {"random", {NUMBER, 1, {NUMBER}}},
+    {"len", {NUMBER, 1, {STRING}}},
+    {"right", {NUMBER, 2, {STRING, NUMBER}}},
+    {"left", {NUMBER, 2, {STRING, NUMBER}}},
+};
+
+// {"stddev", 1, {{Type::Number, 0}, {Type::Number, 1}}},
+// {"mean", 1, {{Type::Number, 0}, {Type::Number, 1}}},
+// {"count", 1, {{Type::Number, 0}, {Type::Number, 1}}},
+// {"min", 1, {{Type::Number, 0}, {Type::Number, 1}}},
+// {"max", 1, {{Type::Number, 0}, {Type::Number, 1}}},
+// {"sin", 1, {{Type::Number, 0}, {Type::Number, 0}}},
+// {"cos", 1, {{Type::Number, 0}, {Type::Number, 0}}},
+// {"tan", 1, {{Type::Number, 0}, {Type::Number, 0}}},
+// {"pi", 0, {{Type::Number, 0}, {Type::Number, 0}}},
+// {"atan", 1, {{Type::Number, 0}, {Type::Number, 0}}},
+// {"asin", 1, {{Type::Number, 0}, {Type::Number, 0}}},
+// {"acos", 1, {{Type::Number, 0}, {Type::Number, 0}}},
+// {"exp", 1, {{Type::Number, 0}, {Type::Number, 0}}},
+// {"ln", 1, {{Type::Number, 0}, {Type::Number, 0}}},
+// {"print", 1, {{Type::Number, 0}, {Type::String, 0}}},
+// {"random", 1, {{Type::Number, 0}, {Type::Number, 0}}},
+// {"len", 1, {{Type::Number, 0}, {Type::String, 0}}},
+// {"right", 2, {{Type::Number, 0}, {Type::String, 0}, {Type::Number, 0}}},
+// {"left", 2, {{Type::Number, 0}, {Type::String, 0}, {Type::Number, 0}}}
+
 class Expression {
   public:
     Expression() = default;
     virtual ~Expression() = default;
 
-    Expression(int line_number, Type type) :
-        line_number(line_number),
+    Expression(location& loc, Type type) :
+        loc(loc),
         opcode(Opcode::Literal),
         type_desc(TypeDescriptor(type)) {}
 
-    Expression(int line, Opcode opcode) : line_number(line), opcode(opcode) {}
+    Expression(location& loc, Opcode opcode) : loc(loc), opcode(opcode) {}
 
     virtual void accept(Visitor& visitor) = 0;
 
-    int line_number {};
+    location loc;
     Opcode opcode {};
     TypeDescriptor type_desc;
 };
 
 class NumberLiteral: public Expression {
   public:
-    NumberLiteral(int line, double value) :
-        Expression(line, Type::Number),
+    NumberLiteral(location& loc, double value) :
+        Expression(loc, Type::Number),
         value(value) {}
 
     void accept(Visitor& visitor) override {
@@ -118,21 +174,23 @@ class NumberLiteral: public Expression {
 
 class StringLiteral: public Expression {
   public:
-    StringLiteral(int line, std::string value) :
-        Expression(line, Type::String),
-        value(std::move(value)) {}
+    StringLiteral(location& loc, std::string value, std::string raw_value) :
+        Expression(loc, Type::String),
+        value(std::move(value)),
+        raw_value(std::move(raw_value)) {}
 
     void accept(Visitor& visitor) override {
         visitor.visit_string(*this);
     }
 
     std::string value;
+    std::string raw_value;
 };
 
 class BooleanLiteral: public Expression {
   public:
-    BooleanLiteral(int line, bool value) :
-        Expression(line, Type::Boolean),
+    BooleanLiteral(location& loc, bool value) :
+        Expression(loc, Type::Boolean),
         value(value) {}
 
     void accept(Visitor& visitor) override {
@@ -144,8 +202,8 @@ class BooleanLiteral: public Expression {
 
 class ArrayLiteral: public Expression {
   public:
-    ArrayLiteral(int line, std::unique_ptr<Expression> items) :
-        Expression(line, Type::Array),
+    ArrayLiteral(location& loc, std::unique_ptr<Expression> items) :
+        Expression(loc, Type::Array),
         items(std::move(items)) {}
 
     void accept(Visitor& visitor) override {
@@ -157,8 +215,8 @@ class ArrayLiteral: public Expression {
 
 class Identifier: public Expression {
   public:
-    Identifier(int line, std::string id) :
-        Expression(line, Opcode::Identifier),
+    Identifier(location& loc, std::string id) :
+        Expression(loc, Opcode::Identifier),
         id(std::move(id)) {}
 
     void accept(Visitor& visitor) override {
@@ -171,12 +229,12 @@ class Identifier: public Expression {
 class BinaryExpression: public Expression {
   public:
     BinaryExpression(
-        int line_number,
+        location& loc,
         std::unique_ptr<Expression> left,
         std::unique_ptr<Expression> right,
         const Opcode opcode
     ) :
-        Expression(line_number, opcode),
+        Expression(loc, opcode),
         left(std::move(left)),
         right(std::move(right)) {}
 
@@ -191,11 +249,11 @@ class BinaryExpression: public Expression {
 class UnaryExpression: public Expression {
   public:
     UnaryExpression(
-        int line,
+        location& loc,
         std::unique_ptr<Expression> left,
         const Opcode opcode
     ) :
-        Expression(line, opcode),
+        Expression(loc, opcode),
         left(std::move(left)) {}
 
     void accept(Visitor& visitor) override {
@@ -207,7 +265,7 @@ class UnaryExpression: public Expression {
 
 class Statement {
   public:
-    Statement(int line_number) : line_number(line_number) {}
+    Statement(location& loc) : line_number(loc.begin.line) {}
 
     virtual ~Statement() = default;
     virtual void accept(Visitor& visitor) = 0;
@@ -216,8 +274,8 @@ class Statement {
 
 class ExpressionStatement: public Statement {
   public:
-    ExpressionStatement(int line, std::unique_ptr<Expression> expression) :
-        Statement(line),
+    ExpressionStatement(location& loc, std::unique_ptr<Expression> expression) :
+        Statement(loc),
         expression(std::move(expression)) {}
 
     void accept(Visitor& visitor) override {
@@ -230,11 +288,11 @@ class ExpressionStatement: public Statement {
 class WaitStatement: public Statement {
   public:
     WaitStatement(
-        int line,
+        location& loc,
         std::vector<std::string> id_list,
         std::unique_ptr<Expression> expression
     ) :
-        Statement(line),
+        Statement(loc),
         id_list(std::move(id_list)),
         expression(std::move(expression)) {}
 
