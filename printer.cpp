@@ -114,56 +114,52 @@ void Printer::visit_expression(Expression& expression) {
     std::print(output, R"("mnemonic": "{}", )", mnemonic[opcode]);
     std::print(output, R"("typeCode": {},)", type);
     std::print(output, R"("type": "{}",)", type_str[type]);
-    std::print(output, R"("dim": {},)", expression.type_desc.dimension);
+    std::print(output, R"("dim": {})", expression.type_desc.dimension);
 }
 
 void Printer::visit_number(NumberLiteral& number) {
     visit_expression(number);
-    std::print(output, R"("numberValue": "{}"}})", number.value);
+    std::print(output, R"(, "numberValue": "{}"}})", number.value);
 }
 
 void Printer::visit_string(StringLiteral& string) {
     visit_expression(string);
-    std::print(output, R"("stringValue": "{}"}})", string.raw_value);
+    std::print(output, R"(, "stringValue": "{}"}})", string.raw_value);
 }
 
 void Printer::visit_boolean(BooleanLiteral& boolean) {
     visit_expression(boolean);
-    std::print(output, R"("booleanValue": "{}"}})", boolean.value);
+    std::print(output, R"(, "booleanValue": "{}"}})", boolean.value);
 }
 
 void Printer::visit_array(ArrayLiteral& array) {
     visit_expression(array);
-    std::print(output, R"("left": )");
     if (array.items) {
+        std::print(output, R"(, "left": )");
         array.items->accept(*this);
-    } else {
-        std::print(output, "{{}}");
     }
     std::print(output, "}}");
 }
 
 void Printer::visit_identifier(Identifier& identifier) {
     visit_expression(identifier);
-    std::print(output, R"("id": "{}"}})", identifier.id);
+    std::print(output, R"(, "id": "{}"}})", identifier.id);
 }
 
 void Printer::visit_binary_expression(BinaryExpression& binary_expr) {
     visit_expression(binary_expr);
-    std::print(output, R"("left": )");
+    std::print(output, R"(, "left": )");
     binary_expr.left->accept(*this);
-    std::print(output, R"(, "right": )");
     if (binary_expr.right) {
+        std::print(output, R"(, "right": )");
         binary_expr.right->accept(*this);
-    } else {
-        std::print(output, "{{}}");
     }
     std::print(output, "}}");
 }
 
 void Printer::visit_unary_expression(UnaryExpression& unary_expr) {
     visit_expression(unary_expr);
-    std::print(output, R"("left": )");
+    std::print(output, R"(, "left": )");
     unary_expr.left->accept(*this);
     std::print(output, "}}");
 }
