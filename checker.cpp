@@ -133,10 +133,7 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
             } else {
                 errors.emplace_back(
                     binary_expr.loc,
-                    std::format(
-                        "cannot assign to an rvalue",
-                        mnemonic[std::to_underlying(left->opcode)]
-                    )
+                    "The LHS of the assignment operator must be an identifier"
                 );
             }
             break;
@@ -211,7 +208,7 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                 errors.emplace_back(
                     binary_expr.loc,
                     std::format(
-                        "cannot add a `{}` to a `{}`",
+                        "Cannot add `{}` to `{}`",
                         right->type_desc.to_string(),
                         left->type_desc.to_string()
                     )
@@ -261,22 +258,19 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
             if (!left->type_desc.is_array()) {
                 errors.emplace_back(
                     binary_expr.loc,
-                    std::format(
-                        "cannot index a `{}`",
-                        left->type_desc.to_string()
-                    )
+                    "Array access operator can only be applied to an array"
                 );
             } else if (right->opcode == Opcode::Comma) {
                 errors.emplace_back(
                     binary_expr.loc,
-                    "cannot index an array by a list of expressions"
+                    "Cannot index an array by a list of expressions"
 
                 );
             } else if (right->type_desc != NUMBER) {
                 errors.emplace_back(
                     binary_expr.loc,
                     std::format(
-                        "cannot index an array by a `{}`",
+                        "Array index should be `number`",
                         right->type_desc.to_string()
                     )
                 );
@@ -290,10 +284,7 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
             if (left->opcode != Opcode::Identifier) {
                 errors.emplace_back(
                     binary_expr.loc,
-                    std::format(
-                        "cannot call a `{}`",
-                        left->type_desc.to_string()
-                    )
+                    "The first operand of a call operator can be an identifier only"
                 );
             } else {
                 auto const& func_id = dynamic_cast<Identifier*>(left.get())->id;
@@ -364,10 +355,7 @@ void Checker::visit_unary_expression(UnaryExpression& unary_expr) {
             if (left->type_desc != TypeDescriptor(Type::Boolean)) {
                 errors.emplace_back(
                     unary_expr.loc,
-                    std::format(
-                        "cannot apply unary `!` operator to `{}`",
-                        left->type_desc.to_string()
-                    )
+                    "Unary `!` operator requires its operand to be of type `boolean`"
                 );
                 break;
             }
@@ -378,10 +366,7 @@ void Checker::visit_unary_expression(UnaryExpression& unary_expr) {
             if (left->type_desc != TypeDescriptor(Type::Number)) {
                 errors.emplace_back(
                     unary_expr.loc,
-                    std::format(
-                        "cannot apply unary `-` operator to `{}`",
-                        left->type_desc.to_string()
-                    )
+                    "Unary `-` operator requires its operand to be of type `number`"
                 );
                 break;
             }
