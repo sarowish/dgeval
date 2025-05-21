@@ -1,7 +1,8 @@
-sample*
+*.txt
+*.json
 *.o
 parser.cpp
 parser.hpp
 scanner.cpp
 location.hpp
-project02syn
+project3
