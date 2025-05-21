@@ -198,11 +198,16 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                        || left->type_desc == NUMBER
                            && right->type_desc == STRING) {
                 binary_expr.type_desc = STRING;
-            } else if (left->type_desc.is_array()
-                       && left->type_desc.item_type() == right->type_desc) {
-                binary_expr.type_desc = left->type_desc;
+            } else if (left->type_desc.is_array()) {
+                if (left->type_desc.item_type() == right->type_desc) {
+                    binary_expr.type_desc = left->type_desc;
+                } else {
+                    errors.emplace_back(
+                        binary_expr.loc,
+                        "The item being appended should be the same type as the array's elements"
+                    );
+                }
             } else {
-                //todo: fix this message for arrays
                 errors.emplace_back(
                     binary_expr.loc,
                     std::format(

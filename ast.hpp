@@ -80,7 +80,11 @@ class TypeDescriptor {
     }
 
     auto to_string() const -> std::string {
-        return type_str[std::to_underlying(type)];
+        if (dimension == 0) {
+            return type_str[std::to_underlying(type)];
+        } else {
+            return "array";
+        }
     }
 
     Type type {};

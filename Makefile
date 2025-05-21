@@ -1,7 +1,7 @@
 CXX = clang++
 SRC = main.cpp driver.cpp parser.cpp scanner.cpp printer.cpp dependency.cpp checker.cpp
 OBJ = ${SRC:.cpp=.o}
-CXXFLAGS = -std=c++23 -g
+CXXFLAGS = -std=c++23 -O2
 
 project3: $(OBJ)
 	$(CXX) $(CXXFLAGS) $^ -o $@
