@@ -21,9 +21,6 @@ void Dependency::visit_program(Program& program) {
     std::vector<std::unique_ptr<Statement>> circular;
 
     for (auto const& [symbol, rel] : symbols) {
-        if (!rel.defines.empty()) {
-            program.symbol_table[symbol] = TypeDescriptor();
-        }
         for (auto parent : rel.defines) {
             for (auto child : rel.depends) {
                 relations[parent].insert(child);
@@ -45,6 +42,14 @@ void Dependency::visit_program(Program& program) {
         for (auto const& idx : relations[idx]) {
             if (--in_degree[idx] == 0) {
                 queue.push(idx);
+            }
+        }
+    }
+
+    for (auto const& [symbol, rel] : symbols) {
+        for (auto defining : rel.defines) {
+            if (!statements->inner[defining]) {
+                program.symbol_table[symbol] = TypeDescriptor();
             }
         }
     }

@@ -56,7 +56,6 @@ void Checker::visit_string(StringLiteral& string) {}
 void Checker::visit_boolean(BooleanLiteral& boolean) {}
 
 void Checker::visit_array(ArrayLiteral& array) {
-    // todo: check types
     if (array.items) {
         list_item_types.emplace();
         array.items->accept(*this);
