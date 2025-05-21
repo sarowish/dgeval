@@ -95,7 +95,7 @@ void Dependency::visit_array(ArrayLiteral& array) {
 }
 
 void Dependency::visit_identifier(Identifier& identifier) {
-    if (available_functions.contains(identifier.id)) {
+    if (runtime_library.contains(identifier.id)) {
         return;
     }
 

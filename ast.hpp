@@ -98,7 +98,7 @@ class FunctionSignature {
     std::vector<TypeDescriptor> parameters;
 };
 
-const std::unordered_map<std::string, FunctionSignature> available_functions = {
+const std::unordered_map<std::string, FunctionSignature> runtime_library = {
     {"stddev", {NUMBER, 1, {{Type::Number, 1}}}},
     {"mean", {NUMBER, 1, {{Type::Number, 1}}}},
     {"count", {NUMBER, 1, {{Type::Number, 1}}}},
@@ -119,26 +119,6 @@ const std::unordered_map<std::string, FunctionSignature> available_functions = {
     {"right", {NUMBER, 2, {STRING, NUMBER}}},
     {"left", {NUMBER, 2, {STRING, NUMBER}}},
 };
-
-// {"stddev", 1, {{Type::Number, 0}, {Type::Number, 1}}},
-// {"mean", 1, {{Type::Number, 0}, {Type::Number, 1}}},
-// {"count", 1, {{Type::Number, 0}, {Type::Number, 1}}},
-// {"min", 1, {{Type::Number, 0}, {Type::Number, 1}}},
-// {"max", 1, {{Type::Number, 0}, {Type::Number, 1}}},
-// {"sin", 1, {{Type::Number, 0}, {Type::Number, 0}}},
-// {"cos", 1, {{Type::Number, 0}, {Type::Number, 0}}},
-// {"tan", 1, {{Type::Number, 0}, {Type::Number, 0}}},
-// {"pi", 0, {{Type::Number, 0}, {Type::Number, 0}}},
-// {"atan", 1, {{Type::Number, 0}, {Type::Number, 0}}},
-// {"asin", 1, {{Type::Number, 0}, {Type::Number, 0}}},
-// {"acos", 1, {{Type::Number, 0}, {Type::Number, 0}}},
-// {"exp", 1, {{Type::Number, 0}, {Type::Number, 0}}},
-// {"ln", 1, {{Type::Number, 0}, {Type::Number, 0}}},
-// {"print", 1, {{Type::Number, 0}, {Type::String, 0}}},
-// {"random", 1, {{Type::Number, 0}, {Type::Number, 0}}},
-// {"len", 1, {{Type::Number, 0}, {Type::String, 0}}},
-// {"right", 2, {{Type::Number, 0}, {Type::String, 0}, {Type::Number, 0}}},
-// {"left", 2, {{Type::Number, 0}, {Type::String, 0}, {Type::Number, 0}}}
 
 class Expression {
   public:

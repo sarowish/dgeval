@@ -78,9 +78,8 @@ void Checker::visit_array(ArrayLiteral& array) {
 void Checker::visit_identifier(Identifier& identifier) {
     if (symbol_table.contains(identifier.id)) {
         identifier.type_desc = symbol_table[identifier.id];
-    } else if (available_functions.contains(identifier.id)) {
-        identifier.type_desc =
-            available_functions.at(identifier.id).return_type;
+    } else if (runtime_library.contains(identifier.id)) {
+        identifier.type_desc = runtime_library.at(identifier.id).return_type;
     } else {
         errors.emplace_back(
             identifier.loc,
@@ -112,7 +111,7 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
         case Opcode::Assign:
             if (left->opcode == Opcode::Identifier) {
                 auto const& id = dynamic_cast<Identifier*>(left.get())->id;
-                if (available_functions.contains(id)) {
+                if (runtime_library.contains(id)) {
                     errors.emplace_back(
                         binary_expr.loc,
                         std::format(
@@ -294,8 +293,7 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                 );
             } else {
                 auto const& func_id = dynamic_cast<Identifier*>(left.get())->id;
-                auto const& function_signature =
-                    available_functions.at(func_id);
+                auto const& function_signature = runtime_library.at(func_id);
                 size_t argument_count = 0;
                 if (right) {
                     list_item_types.top().push_back(right->type_desc);
