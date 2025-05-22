@@ -20,7 +20,7 @@ class Checker: public Visitor {
     void visit_binary_expression(BinaryExpression& binary_expr) override;
     void visit_unary_expression(UnaryExpression& unary_expr) override;
 
-    std::stack<std::vector<TypeDescriptor>> list_item_types;
+    std::stack<std::vector<TypeDescriptor>> epxression_part_types;
     std::vector<Message> errors;
     std::unordered_map<std::string, TypeDescriptor> symbol_table;
 };

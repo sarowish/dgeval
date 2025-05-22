@@ -51,9 +51,9 @@ void Checker::visit_boolean(BooleanLiteral& boolean) {}
 
 void Checker::visit_array(ArrayLiteral& array) {
     if (array.items) {
-        list_item_types.emplace();
+        epxression_part_types.emplace();
         array.items->accept(*this);
-        auto types = list_item_types.top();
+        auto types = epxression_part_types.top();
         if (!std::ranges::all_of(types, [&](TypeDescriptor type) {
                 return type == array.items->type_desc;
             })) {
@@ -64,7 +64,7 @@ void Checker::visit_array(ArrayLiteral& array) {
         } else {
             array.type_desc = array.items->type_desc;
         }
-        list_item_types.pop();
+        epxression_part_types.pop();
         if (array.type_desc.type == Type::None) {
             return;
         }
@@ -93,14 +93,15 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
 
     if (right) {
         if (binary_expr.opcode == Opcode::Call) {
-            list_item_types.emplace();
+            epxression_part_types.emplace();
         }
         right->accept(*this);
     }
 
     if (binary_expr.opcode != Opcode::Assign
             && left->type_desc.type == Type::None
-        || right && right->type_desc.type == Type::None) {
+        || binary_expr.opcode != Opcode::Conditional && right
+            && right->type_desc.type == Type::None) {
         return;
     }
 
@@ -289,8 +290,8 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                 auto const& function_signature = runtime_library.at(func_id);
                 size_t argument_count = 0;
                 if (right) {
-                    list_item_types.top().push_back(right->type_desc);
-                    argument_count = list_item_types.top().size();
+                    epxression_part_types.top().push_back(right->type_desc);
+                    argument_count = epxression_part_types.top().size();
                 }
                 if (function_signature.parameter_count != argument_count) {
                     errors.emplace_back(
@@ -306,7 +307,7 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                 for (size_t idx = 0; idx < function_signature.parameter_count;
                      ++idx) {
                     auto const& parameter = function_signature.parameters[idx];
-                    auto const& argument = list_item_types.top()[idx];
+                    auto const& argument = epxression_part_types.top()[idx];
                     if (argument != parameter) {
                         errors.emplace_back(
                             binary_expr.loc,
@@ -316,21 +317,21 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                                 argument.to_string()
                             )
                         );
-                        list_item_types.pop();
+                        epxression_part_types.pop();
                         return;
                     }
                 }
                 binary_expr.type_desc = left->type_desc;
             }
             if (right) {
-                list_item_types.pop();
+                epxression_part_types.pop();
             }
             break;
         case Opcode::Comma:
             binary_expr.type_desc = right->type_desc;
 
-            if (!list_item_types.empty()) {
-                list_item_types.top().push_back(left->type_desc);
+            if (!epxression_part_types.empty()) {
+                epxression_part_types.top().push_back(left->type_desc);
             }
 
             break;
