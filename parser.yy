@@ -162,5 +162,7 @@ argument_list : %empty          { $$ = nullptr; }
 %%
 
 void dgeval::Parser::error(const location& loc, const std::string& m) {
+    driver.program = std::make_unique<ast::Program>(std::make_unique<ast::StatementList>());
+    driver.program->circular_statements = std::make_unique<ast::StatementList>();
     driver.program->messages.emplace_back(loc, "Syntax error");
 }

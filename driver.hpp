@@ -7,7 +7,7 @@
 
 class Driver {
   public:
-    auto parse(const std::string& file_name) -> int;
+    auto parse(std::ifstream& input) -> int;
     void report();
 
     int assignment_count {};
