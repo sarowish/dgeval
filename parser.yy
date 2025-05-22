@@ -117,10 +117,10 @@ literal : STRING                        { $$ = std::make_unique<ast::StringLiter
         | "[" argument_list "]"         { $$ = std::make_unique<ast::ArrayLiteral>(@1, $2); }
         ;
 
-arithmetic_expression : expression "+" expression       { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::Plus); }
-                      | expression "-" expression       { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::Minus); }
-                      | expression "*" expression       { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::Star); }
-                      | expression "/" expression       { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::Slash); }
+arithmetic_expression : expression "+" expression       { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::Add); }
+                      | expression "-" expression       { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::Subtract); }
+                      | expression "*" expression       { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::Multiply); }
+                      | expression "/" expression       { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::Divide); }
                       ;                                                                                 
                                                                                                        
 logical_expression : expression "&&" expression         { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::And); }
@@ -136,7 +136,7 @@ comparison_expression : expression "==" expression      { $$ = std::make_unique<
                       ;
 
 negation_expression : "!" expression                    { $$ = std::make_unique<ast::UnaryExpression>(@1, $2, ast::Opcode::Not); }
-                    | "-" expression                    { $$ = std::make_unique<ast::UnaryExpression>(@1, $2, ast::Opcode::Negate); }
+                    | "-" expression                    { $$ = std::make_unique<ast::UnaryExpression>(@1, $2, ast::Opcode::Minus); }
                     ;
 
 assignment : expression "=" expression                  { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::Assign); } ;

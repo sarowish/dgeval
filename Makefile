@@ -1,4 +1,4 @@
-CXX = clang++
+CXX = g++
 SRC = main.cpp driver.cpp parser.cpp scanner.cpp printer.cpp dependency.cpp checker.cpp
 OBJ = ${SRC:.cpp=.o}
 CXXFLAGS = -std=c++23 -O2

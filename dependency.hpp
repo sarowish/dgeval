@@ -11,6 +11,10 @@ struct Relations {
 };
 
 class Dependency: public Visitor {
+    Opcode opcode;
+    size_t statement_idx;
+    std::unordered_map<std::string, Relations> symbols;
+
   public:
     void visit_program(Program& program) override;
     void visit_statement_list(StatementList& statements) override;
@@ -24,10 +28,6 @@ class Dependency: public Visitor {
     void visit_identifier(Identifier& identifier) override;
     void visit_binary_expression(BinaryExpression& binary_expr) override;
     void visit_unary_expression(UnaryExpression& unary_expr) override;
-
-    Opcode opcode;
-    size_t statement_idx;
-    std::unordered_map<std::string, Relations> symbols;
 };
 
 } // namespace dgeval::ast

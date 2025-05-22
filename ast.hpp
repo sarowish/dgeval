@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cassert>
 #include <memory>
 #include <unordered_map>
 #include <utility>
@@ -24,11 +23,11 @@ enum class Opcode : std::uint8_t {
     LessEqual = 10,
     Greater = 11,
     GreaterEqual = 12,
-    Plus = 13,
-    Minus = 14,
-    Star = 15,
-    Slash = 16,
-    Negate = 17,
+    Add = 13,
+    Subtract = 14,
+    Multiply = 15,
+    Divide = 16,
+    Minus = 17,
     Not = 18,
     ArrayAccess = 19,
     Call = 20,
@@ -36,20 +35,20 @@ enum class Opcode : std::uint8_t {
     Literal = 24,
 };
 
-const std::array<std::string, 25> mnemonic = {
+const std::array<std::string, 25> MNEMONICS = {
     "nop", "comma", "assign", "cond", "alt", "band", "bor",  "eq",  "neq",
     "lt",  "lte",   "gt",     "gte",  "add", "sub",  "mul",  "div", "minus",
     "not", "aa",    "call",   "jmp",  "jf",  "id",   "const"
 };
 
-const std::array<std::string, 21> operator_symbol = {
+const std::array<std::string, 21> OPERATOR_SYMBOLS = {
     "",  ",",  "=", "?", ":", "&&", "||", "==", "!=", "<", "<=",
     ">", ">=", "+", "-", "*", "/",  "-",  "!",  "[]", "()"
 };
 
 enum class Type : std::uint8_t { None, Number, String, Boolean, Array };
 
-const std::array<std::string, 5> type_str =
+const std::array<std::string, 5> TYPE_STR =
     {"none", "number", "string", "boolean", "array"};
 
 class TypeDescriptor {
@@ -63,13 +62,14 @@ class TypeDescriptor {
     }
 
     auto is_array() const -> bool {
-        // todo: remove array type check
-        return dimension != 0 || type == Type::Array;
+        return dimension != 0;
+    }
+
+    auto is_empty_array() const -> bool {
+        return type == Type::None && dimension == 1;
     }
 
     auto item_type() const -> TypeDescriptor {
-        assert((is_array(), "can only call for array types"));
-
         TypeDescriptor type = *this;
         --type.dimension;
 
@@ -77,20 +77,21 @@ class TypeDescriptor {
     }
 
     auto to_string() const -> std::string {
-        if (dimension == 0) {
-            return type_str[std::to_underlying(type)];
-        } else {
-            return "array";
+        auto s = TYPE_STR[std::to_underlying(type)];
+        if (dimension != 0) {
+            return std::format("[{}]", s);
         }
+        return s;
     }
 
     Type type {};
     int dimension {};
 };
 
-const TypeDescriptor NUMBER(Type::Number);
-const TypeDescriptor STRING(Type::String);
-const TypeDescriptor BOOLEAN(Type::Boolean);
+inline constexpr TypeDescriptor NONE;
+inline constexpr TypeDescriptor NUMBER(Type::Number);
+inline constexpr TypeDescriptor STRING(Type::String);
+inline constexpr TypeDescriptor BOOLEAN(Type::Boolean);
 
 class FunctionSignature {
   public:
@@ -99,7 +100,7 @@ class FunctionSignature {
     std::vector<TypeDescriptor> parameters;
 };
 
-const std::unordered_map<std::string, FunctionSignature> runtime_library = {
+const std::unordered_map<std::string, FunctionSignature> RUNTIME_LIBRARY = {
     {"stddev", {NUMBER, 1, {{Type::Number, 1}}}},
     {"mean", {NUMBER, 1, {{Type::Number, 1}}}},
     {"count", {NUMBER, 1, {{Type::Number, 1}}}},

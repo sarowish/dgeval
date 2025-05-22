@@ -78,7 +78,7 @@ loc.step();
   \\\\          { driver.buffer += '\\'; driver.raw_buffer += yytext; }
   \\\"          { driver.buffer += '\"'; driver.raw_buffer += yytext; }
   {hex_escape}  { driver.buffer += strtol(yytext + 2, NULL, 16); driver.raw_buffer += yytext; }
-  \n            throw Parser::syntax_error(loc, "");
+  \n+           loc.lines(yyleng); loc.step();
   <<EOF>>       throw Parser::syntax_error(loc, "");
   .             throw Parser::syntax_error(loc, "");
 }

@@ -1,4 +1,5 @@
 #include "checker.hpp"
+#include "ast.hpp"
 
 namespace dgeval::ast {
 
@@ -51,9 +52,9 @@ void Checker::visit_boolean(BooleanLiteral& boolean) {}
 
 void Checker::visit_array(ArrayLiteral& array) {
     if (array.items) {
-        epxression_part_types.emplace();
+        expression_part_types.emplace();
         array.items->accept(*this);
-        auto types = epxression_part_types.top();
+        auto types = expression_part_types.top();
         if (!std::ranges::all_of(types, [&](TypeDescriptor type) {
                 return type == array.items->type_desc;
             })) {
@@ -61,13 +62,11 @@ void Checker::visit_array(ArrayLiteral& array) {
                 array.loc,
                 "All items of an array should be of the same type"
             );
-        } else {
-            array.type_desc = array.items->type_desc;
         }
-        epxression_part_types.pop();
-        if (array.type_desc.type == Type::None) {
-            return;
-        }
+        array.type_desc = array.items->type_desc;
+        expression_part_types.pop();
+    } else {
+        array.type_desc = NONE;
     }
     ++array.type_desc.dimension;
 }
@@ -75,8 +74,8 @@ void Checker::visit_array(ArrayLiteral& array) {
 void Checker::visit_identifier(Identifier& identifier) {
     if (symbol_table.contains(identifier.id)) {
         identifier.type_desc = symbol_table[identifier.id];
-    } else if (runtime_library.contains(identifier.id)) {
-        identifier.type_desc = runtime_library.at(identifier.id).return_type;
+    } else if (RUNTIME_LIBRARY.contains(identifier.id)) {
+        identifier.type_desc = RUNTIME_LIBRARY.at(identifier.id).return_type;
     } else {
         errors.emplace_back(
             identifier.loc,
@@ -92,16 +91,19 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
     left->accept(*this);
 
     if (right) {
-        if (binary_expr.opcode == Opcode::Call) {
-            epxression_part_types.emplace();
+        if (binary_expr.opcode == Opcode::Call && left->type_desc != NONE) {
+            expression_part_types.emplace();
         }
         right->accept(*this);
     }
 
     if (binary_expr.opcode != Opcode::Assign
-            && left->type_desc.type == Type::None
-        || binary_expr.opcode != Opcode::Conditional && right
-            && right->type_desc.type == Type::None) {
+            && binary_expr.opcode != Opcode::Comma && left->type_desc == NONE
+        || binary_expr.opcode != Opcode::Conditional
+            && binary_expr.opcode != Opcode::Call
+            && binary_expr.opcode != Opcode::ArrayAccess
+            && binary_expr.opcode != Opcode::Comma && right
+            && right->type_desc == NONE) {
         return;
     }
 
@@ -109,7 +111,7 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
         case Opcode::Assign:
             if (left->opcode == Opcode::Identifier) {
                 auto const& id = dynamic_cast<Identifier*>(left.get())->id;
-                if (runtime_library.contains(id)) {
+                if (RUNTIME_LIBRARY.contains(id)) {
                     errors.emplace_back(
                         binary_expr.loc,
                         std::format(
@@ -117,7 +119,7 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                             id
                         )
                     );
-                } else if (symbol_table[id] != TypeDescriptor()) {
+                } else if (symbol_table[id] != NONE) {
                     errors.emplace_back(
                         binary_expr.loc,
                         std::format(
@@ -127,6 +129,7 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                     );
                 } else {
                     binary_expr.type_desc = right->type_desc;
+                    binary_expr.left->type_desc = right->type_desc;
                     symbol_table[id] = binary_expr.type_desc;
                 }
             } else {
@@ -152,7 +155,7 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                     binary_expr.loc,
                     std::format(
                         "Last 2 operands of the ternary operator should be of the same type",
-                        operator_symbol[std::to_underlying(binary_expr.opcode)]
+                        OPERATOR_SYMBOLS[std::to_underlying(binary_expr.opcode)]
                     )
                 );
             } else {
@@ -170,22 +173,22 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
             }
             binary_expr.type_desc = BOOLEAN;
             break;
-        case Opcode::Star:
-        case Opcode::Slash:
+        case Opcode::Multiply:
+        case Opcode::Divide:
         case Opcode::Minus:
             if (left->type_desc != NUMBER || right->type_desc != NUMBER) {
                 errors.emplace_back(
                     binary_expr.loc,
                     std::format(
                         "Operator `{}` requires its operands to be of type `number`",
-                        operator_symbol[std::to_underlying(binary_expr.opcode)]
+                        OPERATOR_SYMBOLS[std::to_underlying(binary_expr.opcode)]
                     )
                 );
             } else {
                 binary_expr.type_desc = NUMBER;
             }
             break;
-        case Opcode::Plus:
+        case Opcode::Add:
             if (left->type_desc == NUMBER && right->type_desc == NUMBER) {
                 binary_expr.type_desc = NUMBER;
             } else if (left->type_desc == STRING
@@ -197,6 +200,9 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
             } else if (left->type_desc.is_array()) {
                 if (left->type_desc.item_type() == right->type_desc) {
                     binary_expr.type_desc = left->type_desc;
+                } else if (left->type_desc.is_empty_array()) {
+                    binary_expr.type_desc = right->type_desc;
+                    ++binary_expr.type_desc.dimension;
                 } else {
                     errors.emplace_back(
                         binary_expr.loc,
@@ -223,7 +229,8 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                     binary_expr.loc,
                     std::format(
                         "Operator `{}` is not supported for `{}`",
-                        operator_symbol[std::to_underlying(binary_expr.opcode)],
+                        OPERATOR_SYMBOLS[std::to_underlying(binary_expr.opcode
+                        )],
                         left->type_desc.to_string()
                     )
                 );
@@ -232,7 +239,7 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                     binary_expr.loc,
                     std::format(
                         "Operator `{}` requires its operands to be of the same type",
-                        operator_symbol[std::to_underlying(binary_expr.opcode)]
+                        OPERATOR_SYMBOLS[std::to_underlying(binary_expr.opcode)]
                     )
                 );
             } else {
@@ -246,7 +253,7 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                     binary_expr.loc,
                     std::format(
                         "Operator `{}` requires its operands to be of the same type",
-                        operator_symbol[std::to_underlying(binary_expr.opcode)]
+                        OPERATOR_SYMBOLS[std::to_underlying(binary_expr.opcode)]
                     )
                 );
             } else {
@@ -283,55 +290,53 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
             if (left->opcode != Opcode::Identifier) {
                 errors.emplace_back(
                     binary_expr.loc,
-                    "The first operand of a call operator can be an identifier only"
+                    "The first operand of a call operator can only be an identifier"
                 );
             } else {
                 auto const& func_id = dynamic_cast<Identifier*>(left.get())->id;
-                auto const& function_signature = runtime_library.at(func_id);
+                auto const& function_signature = RUNTIME_LIBRARY.at(func_id);
                 size_t argument_count = 0;
                 if (right) {
-                    epxression_part_types.top().push_back(right->type_desc);
-                    argument_count = epxression_part_types.top().size();
+                    expression_part_types.top().push_back(right->type_desc);
+                    argument_count = expression_part_types.top().size();
                 }
                 if (function_signature.parameter_count != argument_count) {
                     errors.emplace_back(
                         binary_expr.loc,
                         std::format(
-                            "Mismatch in function argument count: expected `{}`, received `{}`",
+                            "Mismatch in function argument count: expected {}, received {}",
                             function_signature.parameter_count,
                             argument_count
                         )
                     );
-                    break;
                 }
                 for (size_t idx = 0; idx < function_signature.parameter_count;
                      ++idx) {
                     auto const& parameter = function_signature.parameters[idx];
-                    auto const& argument = epxression_part_types.top()[idx];
-                    if (argument != parameter) {
+                    auto const& argument = expression_part_types.top()[idx];
+                    if (argument != parameter && argument != NONE) {
                         errors.emplace_back(
                             binary_expr.loc,
                             std::format(
-                                "Mismatch in function argument types: expected `{}`, received `{}`",
+                                "Type mismatch in function argument position {}: expected `{}`, received `{}`",
+                                idx + 1,
                                 parameter.to_string(),
                                 argument.to_string()
                             )
                         );
-                        epxression_part_types.pop();
-                        return;
                     }
                 }
                 binary_expr.type_desc = left->type_desc;
             }
             if (right) {
-                epxression_part_types.pop();
+                expression_part_types.pop();
             }
             break;
         case Opcode::Comma:
             binary_expr.type_desc = right->type_desc;
 
-            if (!epxression_part_types.empty()) {
-                epxression_part_types.top().push_back(left->type_desc);
+            if (!expression_part_types.empty()) {
+                expression_part_types.top().push_back(left->type_desc);
             }
 
             break;
@@ -351,7 +356,7 @@ void Checker::visit_unary_expression(UnaryExpression& unary_expr) {
 
     switch (unary_expr.opcode) {
         case Opcode::Not:
-            if (left->type_desc != TypeDescriptor(Type::Boolean)) {
+            if (left->type_desc != BOOLEAN) {
                 errors.emplace_back(
                     unary_expr.loc,
                     "Unary `!` operator requires its operand to be of type `boolean`"
@@ -361,8 +366,8 @@ void Checker::visit_unary_expression(UnaryExpression& unary_expr) {
 
             unary_expr.type_desc = left->type_desc;
             break;
-        case Opcode::Negate:
-            if (left->type_desc != TypeDescriptor(Type::Number)) {
+        case Opcode::Minus:
+            if (left->type_desc != NUMBER) {
                 errors.emplace_back(
                     unary_expr.loc,
                     "Unary `-` operator requires its operand to be of type `number`"

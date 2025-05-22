@@ -6,6 +6,10 @@
 namespace dgeval::ast {
 
 class Checker: public Visitor {
+    std::stack<std::vector<TypeDescriptor>> expression_part_types;
+    std::vector<Message> errors;
+    std::unordered_map<std::string, TypeDescriptor> symbol_table;
+
   public:
     void visit_program(Program& program) override;
     void visit_statement_list(StatementList& statements) override;
@@ -19,10 +23,6 @@ class Checker: public Visitor {
     void visit_identifier(Identifier& identifier) override;
     void visit_binary_expression(BinaryExpression& binary_expr) override;
     void visit_unary_expression(UnaryExpression& unary_expr) override;
-
-    std::stack<std::vector<TypeDescriptor>> epxression_part_types;
-    std::vector<Message> errors;
-    std::unordered_map<std::string, TypeDescriptor> symbol_table;
 };
 
 } // namespace dgeval::ast

@@ -6,6 +6,8 @@
 namespace dgeval::ast {
 
 class Printer: public Visitor {
+    std::ofstream output;
+
   public:
     Printer(const std::string& file_name) : output(file_name + ".json") {}
 
@@ -21,14 +23,8 @@ class Printer: public Visitor {
     void visit_identifier(Identifier& identifier) override;
     void visit_binary_expression(BinaryExpression& binary_expr) override;
     void visit_unary_expression(UnaryExpression& unary_expr) override;
-
-    std::ofstream output;
 };
 
-void join_strings(
-    std::ofstream& output,
-    std::vector<std::string>& strings,
-    const std::string& delimiter
-);
+void join_strings(std::ofstream& output, std::vector<std::string>& strings);
 
 } // namespace dgeval::ast

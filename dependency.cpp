@@ -30,7 +30,7 @@ void Dependency::visit_program(Program& program) {
     }
 
     for (; !queue.empty(); queue.pop()) {
-        size_t idx = queue.front();
+        const size_t idx = queue.front();
         sorted.push_back(std::move(statements->inner[idx]));
 
         for (auto const& idx : relations[idx]) {
@@ -43,7 +43,7 @@ void Dependency::visit_program(Program& program) {
     for (auto const& [symbol, rel] : symbols) {
         for (auto defining : rel.defines) {
             if (!statements->inner[defining]) {
-                program.symbol_table[symbol] = TypeDescriptor();
+                program.symbol_table[symbol] = NONE;
             }
         }
     }
@@ -94,7 +94,7 @@ void Dependency::visit_array(ArrayLiteral& array) {
 }
 
 void Dependency::visit_identifier(Identifier& identifier) {
-    if (runtime_library.contains(identifier.id)) {
+    if (RUNTIME_LIBRARY.contains(identifier.id)) {
         return;
     }
 
