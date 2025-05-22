@@ -35,7 +35,7 @@ void Checker::visit_wait_statement(WaitStatement& statement) {
         if (!symbol_table.contains(id)) {
             errors.emplace_back(
                 statement.line_number,
-                std::format("The variable `{}` is not defined", id)
+                std::format("The symbol `{}` is not defined", id)
             );
         }
     }
@@ -61,9 +61,13 @@ void Checker::visit_array(ArrayLiteral& array) {
                 array.loc,
                 "All items of an array should be of the same type"
             );
+        } else {
+            array.type_desc = array.items->type_desc;
         }
         list_item_types.pop();
-        array.type_desc = array.items->type_desc;
+        if (array.type_desc.type == Type::None) {
+            return;
+        }
     }
     ++array.type_desc.dimension;
 }
