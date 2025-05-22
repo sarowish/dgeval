@@ -1,8 +1,5 @@
 #pragma once
 
-#include <cstddef>
-#include <string>
-#include <unordered_map>
 #include <unordered_set>
 #include "context.hpp"
 
@@ -32,6 +29,5 @@ class Dependency: public Visitor {
     size_t statement_idx;
     std::unordered_map<std::string, Relations> symbols;
 };
-
 
 } // namespace dgeval::ast

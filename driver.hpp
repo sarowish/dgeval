@@ -1,8 +1,6 @@
 #pragma once
 
 #include <fstream>
-#include <memory>
-#include "ast.hpp"
 #include "parser.hpp"
 
 class Driver {

@@ -1,10 +1,7 @@
 #pragma once
 
 #include <fstream>
-#include <string>
-#include <vector>
 #include "context.hpp"
-#include "visitor.hpp"
 
 namespace dgeval::ast {
 

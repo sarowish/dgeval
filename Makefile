@@ -6,22 +6,28 @@ CXXFLAGS = -std=c++23 -O2
 project3: $(OBJ)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
-main.o: main.cpp driver.hpp parser.hpp dependency.hpp ast.hpp visitor.hpp
+main.o: main.cpp checker.hpp context.hpp ast.hpp location.hpp visitor.hpp \
+  dependency.hpp driver.hpp parser.hpp printer.hpp
 
-driver.o: driver.cpp driver.hpp parser.hpp scanner.hpp visitor.hpp
+driver.o: driver.cpp driver.hpp parser.hpp context.hpp ast.hpp \
+  location.hpp visitor.hpp scanner.hpp
 
-printer.o: printer.cpp printer.hpp ast.hpp context.hpp visitor.hpp
+printer.o: printer.cpp printer.hpp context.hpp ast.hpp location.hpp \
+  visitor.hpp
 
-dependency.o: dependency.cpp dependency.hpp ast.hpp context.hpp visitor.hpp
+dependency.o: dependency.cpp dependency.hpp context.hpp ast.hpp \
+  location.hpp visitor.hpp
 
-checker.o: checker.cpp checker.hpp ast.hpp visitor.hpp
+checker.o: checker.cpp checker.hpp context.hpp ast.hpp location.hpp \
+  visitor.hpp
 
-parser.o: parser.cpp parser.hpp scanner.hpp driver.hpp visitor.hpp ast.hpp
+parser.o: parser.cpp parser.hpp context.hpp ast.hpp location.hpp \
+  visitor.hpp scanner.hpp driver.hpp
 
-scanner.o: scanner.cpp scanner.hpp parser.hpp driver.hpp ast.hpp
+scanner.o: scanner.cpp scanner.hpp driver.hpp parser.hpp context.hpp \
+  ast.hpp location.hpp visitor.hpp
 
-
-parser.cpp parser.hpp: parser.yy
+parser.cpp parser.hpp location.hpp: parser.yy
 	bison -o parser.cpp $^
 
 scanner.cpp: scanner.ll scanner.hpp

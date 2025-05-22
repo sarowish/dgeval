@@ -1,12 +1,4 @@
 #include "printer.hpp"
-#include <cassert>
-#include <memory>
-#include <print>
-#include <string>
-#include <unordered_map>
-#include <utility>
-#include "ast.hpp"
-#include "context.hpp"
 
 namespace dgeval::ast {
 

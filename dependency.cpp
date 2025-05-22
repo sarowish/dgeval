@@ -1,11 +1,5 @@
 #include "dependency.hpp"
-#include <memory>
-#include <print>
 #include <queue>
-#include <unordered_set>
-#include <vector>
-#include "ast.hpp"
-#include "context.hpp"
 
 namespace dgeval::ast {
 

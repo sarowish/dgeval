@@ -1,10 +1,7 @@
 #pragma once
 
 #include <stack>
-#include <unordered_map>
-#include <vector>
 #include "context.hpp"
-#include "visitor.hpp"
 
 namespace dgeval::ast {
 

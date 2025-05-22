@@ -1,10 +1,7 @@
 #pragma once
 
 #include <algorithm>
-#include <array>
-#include <unordered_map>
 #include "ast.hpp"
-#include "location.hpp"
 
 namespace dgeval::ast {
 
