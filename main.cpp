@@ -5,7 +5,8 @@
 
 auto main(int argc, char** argv) -> int {
     if (argc != 2) {
-        std::println(std::cout, "Exactly one input file needs to be provided.");
+        std::cout << "Exactly one input file needs to be provided."
+                  << std::endl;
         return 1;
     }
 
@@ -13,7 +14,7 @@ auto main(int argc, char** argv) -> int {
     std::ifstream input(file_name + ".txt");
 
     if (!input.is_open()) {
-        std::println(std::cout, "File not found!");
+        std::cout << "File not found!" << std::endl;
         return 1;
     }
 

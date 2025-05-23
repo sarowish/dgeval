@@ -4,147 +4,138 @@ namespace dgeval::ast {
 
 void join_strings(std::ofstream& output, std::vector<std::string>& strings) {
     for (auto str = strings.begin(); str != strings.end();) {
-        std::print(output, "\"{}\"", *str);
+        output << "\"" << *str << "\"";
         if (++str != strings.end()) {
-            std::print(output, ", ");
+            output << ", ";
         }
     }
 }
 
 void Printer::visit_program(Program& program) {
-    std::print(output, R"({{"circularStatements": )");
+    output << "{\"circularStatements\": ";
     program.circular_statements->accept(*this);
 
     auto& symbols = program.symbol_table;
     auto& messages = program.messages;
-    std::print(output, R"(, "symbols": )");
-    std::print(output, "[");
+    output << ", \"symbols\": [";
     for (auto symbol = symbols.begin(); symbol != symbols.end();) {
         const int type = std::to_underlying(symbol->second.type);
-        std::print(output, R"({{"name": "{}",)", symbol->first);
-        std::print(output, R"("type": "{}",)", TYPE_STR[type]);
-        std::print(output, R"("dim": {}}})", symbol->second.dimension);
+        output << "{\"name\": \"" << symbol->first << "\"," << "\"type\": \""
+               << TYPE_STR[type] << "\","
+               << "\"dim\": " << symbol->second.dimension << "}";
 
         if (++symbol != symbols.end()) {
-            std::print(output, ", ");
+            output << ", ";
         }
     }
-    std::print(output, "]");
 
-    std::print(output, R"(, "executableStatements": )");
+    output << "], \"executableStatements\": ";
     program.statements->accept(*this);
 
     program.sort_messages();
-    std::print(output, R"(, "messages": )");
-    std::print(output, "[");
+    output << ", \"messages\": [";
     for (auto msg = messages.begin(); msg != messages.end();) {
-        std::print(output, "\"");
+        output << "\"";
         if (msg->loc.has_value()) {
-            std::print(output, "Line Number {} ", msg->loc->begin.line);
+            output << "Line Number " << msg->loc->begin.line << " ";
         }
-        std::print(
-            output,
-            R"([{}]: {}.")",
-            SEVERITY_STR[std::to_underlying(msg->severity)],
-            msg->text
-        );
+        output << "[" << SEVERITY_STR[std::to_underlying(msg->severity)]
+               << "]: " << msg->text << ".\"";
         if (++msg != messages.end()) {
-            std::print(output, ", ");
+            output << ", ";
         }
     }
-    std::print(output, "]");
-
-    std::print(output, "}}");
+    output << "]}";
 }
 
 void Printer::visit_statement_list(StatementList& statements) {
-    std::print(output, "[");
+    output << "[";
     for (auto statement = statements.inner.begin();
          statement != statements.inner.end();) {
         (*statement)->accept(*this);
         if (++statement != statements.inner.end()) {
-            std::print(output, ", ");
+            output << ", ";
         }
     }
-    std::print(output, "]");
+    output << "]";
 }
 
 void Printer::visit_expression_statement(ExpressionStatement& statement) {
-    std::print(output, R"({{"lineNumber": {}, )", statement.line_number);
-    std::print(output, R"("nodeType": "expression statement", )");
-    std::print(output, R"("expression": )");
+    output << "{\"lineNumber\": " << statement.line_number << ", "
+           << "\"nodeType\": \"expression statement\", "
+           << "\"expression\": ";
     statement.expression->accept(*this);
-    std::print(output, "}}");
+    output << "}";
 }
 
 void Printer::visit_wait_statement(WaitStatement& statement) {
-    std::print(output, R"({{"lineNumber": {}, )", statement.line_number);
-    std::print(output, R"("nodeType": "wait statement", )");
-    std::print(output, R"("expression": )");
+    output << "{\"lineNumber\": " << statement.line_number << ", "
+           << "\"nodeType\": \"wait statement\", "
+           << "\"expression\": ";
     statement.expression->accept(*this);
-    std::print(output, R"(, "idList": [)");
+    output << ", \"idList\": [";
     join_strings(output, statement.id_list);
-    std::print(output, "]}}");
+    output << "]}";
 }
 
 void Printer::visit_expression(Expression& expression) {
-    int opcode = std::to_underlying(expression.opcode);
-    int type = std::to_underlying(expression.type_desc.type);
+    int const opcode = std::to_underlying(expression.opcode);
+    int const type = std::to_underlying(expression.type_desc.type);
 
-    std::print(output, R"({{"lineNumber": {},)", expression.loc.begin.line);
-    std::print(output, R"("nodeType": "expression node",)");
-    std::print(output, R"("opCode": {},)", opcode);
-    std::print(output, R"("mnemonic": "{}", )", MNEMONICS[opcode]);
-    std::print(output, R"("typeCode": {},)", type);
-    std::print(output, R"("type": "{}",)", TYPE_STR[type]);
-    std::print(output, R"("dim": {})", expression.type_desc.dimension);
+    output << "{\"lineNumber\": " << expression.loc.begin.line << ","
+           << "\"nodeType\": \"expression node\","
+           << "\"opCode\": " << opcode << ","
+           << "\"mnemonic\": \"" << MNEMONICS[opcode] << "\", "
+           << "\"typeCode\": " << type << ","
+           << "\"type\": \"" << TYPE_STR[type] << "\","
+           << "\"dim\": " << expression.type_desc.dimension;
 }
 
 void Printer::visit_number(NumberLiteral& number) {
     visit_expression(number);
-    std::print(output, R"(, "numberValue": "{}"}})", number.value);
+    output << ", \"numberValue\": \"" << number.value << "\"}";
 }
 
 void Printer::visit_string(StringLiteral& string) {
     visit_expression(string);
-    std::print(output, R"(, "stringValue": "{}"}})", string.raw_value);
+    output << ", \"stringValue\": \"" << string.raw_value << "\"}";
 }
 
 void Printer::visit_boolean(BooleanLiteral& boolean) {
     visit_expression(boolean);
-    std::print(output, R"(, "numberValue": "{:d}"}})", boolean.value);
+    output << ", \"numberValue\": \"" << boolean.value << "\"}";
 }
 
 void Printer::visit_array(ArrayLiteral& array) {
     visit_expression(array);
     if (array.items) {
-        std::print(output, R"(, "left": )");
+        output << ", \"left\": ";
         array.items->accept(*this);
     }
-    std::print(output, "}}");
+    output << "}";
 }
 
 void Printer::visit_identifier(Identifier& identifier) {
     visit_expression(identifier);
-    std::print(output, R"(, "id": "{}"}})", identifier.id);
+    output << ", \"id\": \"" << identifier.id << "\"}";
 }
 
 void Printer::visit_binary_expression(BinaryExpression& binary_expr) {
     visit_expression(binary_expr);
-    std::print(output, R"(, "left": )");
+    output << ", \"left\": ";
     binary_expr.left->accept(*this);
     if (binary_expr.right) {
-        std::print(output, R"(, "right": )");
+        output << ", \"right\": ";
         binary_expr.right->accept(*this);
     }
-    std::print(output, "}}");
+    output << "}";
 }
 
 void Printer::visit_unary_expression(UnaryExpression& unary_expr) {
     visit_expression(unary_expr);
-    std::print(output, R"(, "left": )");
+    output << ", \"left\": ";
     unary_expr.left->accept(*this);
-    std::print(output, "}}");
+    output << "}";
 }
 
 } // namespace dgeval::ast

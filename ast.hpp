@@ -79,7 +79,7 @@ class TypeDescriptor {
     auto to_string() const -> std::string {
         auto s = TYPE_STR[std::to_underlying(type)];
         if (dimension != 0) {
-            return std::format("[{}]", s);
+            return "(" + s + "," + " " + std::to_string(dimension) + ")";
         }
         return s;
     }
@@ -96,7 +96,7 @@ inline constexpr TypeDescriptor BOOLEAN(Type::Boolean);
 class FunctionSignature {
   public:
     TypeDescriptor return_type;
-    int parameter_count;
+    size_t parameter_count;
     std::vector<TypeDescriptor> parameters;
 };
 

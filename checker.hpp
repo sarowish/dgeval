@@ -6,6 +6,7 @@
 namespace dgeval::ast {
 
 class Checker: public Visitor {
+    Opcode opcode;
     std::stack<std::vector<TypeDescriptor>> expression_part_types;
     std::vector<Message> errors;
     std::unordered_map<std::string, TypeDescriptor> symbol_table;

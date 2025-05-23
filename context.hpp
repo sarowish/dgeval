@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <optional>
 #include "ast.hpp"
 
 namespace dgeval::ast {
