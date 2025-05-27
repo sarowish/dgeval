@@ -10,7 +10,7 @@ struct Relations {
     std::unordered_set<size_t> defines;
 };
 
-class Dependency: public Visitor {
+class Dependency: public Visitor<void> {
     Opcode opcode;
     size_t statement_idx;
     std::unordered_map<std::string, Relations> symbols;

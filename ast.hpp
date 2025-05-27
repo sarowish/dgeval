@@ -134,7 +134,9 @@ class Expression {
 
     Expression(location& loc, Opcode opcode) : loc(loc), opcode(opcode) {}
 
-    virtual void accept(Visitor& visitor) = 0;
+    virtual void accept(Visitor<void>& visitor) = 0;
+    virtual auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
+        -> std::unique_ptr<Expression> = 0;
 
     location loc;
     Opcode opcode {};
@@ -147,8 +149,13 @@ class NumberLiteral: public Expression {
         Expression(loc, Type::Number),
         value(value) {}
 
-    void accept(Visitor& visitor) override {
+    void accept(Visitor<void>& visitor) override {
         visitor.visit_number(*this);
+    }
+
+    virtual auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
+        -> std::unique_ptr<Expression> override {
+        return visitor.visit_number(*this);
     }
 
     double value;
@@ -161,8 +168,13 @@ class StringLiteral: public Expression {
         value(std::move(value)),
         raw_value(std::move(raw_value)) {}
 
-    void accept(Visitor& visitor) override {
+    void accept(Visitor<void>& visitor) override {
         visitor.visit_string(*this);
+    }
+
+    virtual auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
+        -> std::unique_ptr<Expression> override {
+        return visitor.visit_string(*this);
     }
 
     std::string value;
@@ -175,8 +187,13 @@ class BooleanLiteral: public Expression {
         Expression(loc, Type::Boolean),
         value(value) {}
 
-    void accept(Visitor& visitor) override {
+    void accept(Visitor<void>& visitor) override {
         visitor.visit_boolean(*this);
+    }
+
+    virtual auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
+        -> std::unique_ptr<Expression> override {
+        return visitor.visit_boolean(*this);
     }
 
     bool value;
@@ -188,8 +205,13 @@ class ArrayLiteral: public Expression {
         Expression(loc, Type::Array),
         items(std::move(items)) {}
 
-    void accept(Visitor& visitor) override {
+    void accept(Visitor<void>& visitor) override {
         visitor.visit_array(*this);
+    }
+
+    virtual auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
+        -> std::unique_ptr<Expression> override {
+        return visitor.visit_array(*this);
     }
 
     std::unique_ptr<Expression> items;
@@ -201,8 +223,13 @@ class Identifier: public Expression {
         Expression(loc, Opcode::Identifier),
         id(std::move(id)) {}
 
-    void accept(Visitor& visitor) override {
+    void accept(Visitor<void>& visitor) override {
         visitor.visit_identifier(*this);
+    }
+
+    virtual auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
+        -> std::unique_ptr<Expression> override {
+        return visitor.visit_identifier(*this);
     }
 
     std::string id;
@@ -220,8 +247,13 @@ class BinaryExpression: public Expression {
         left(std::move(left)),
         right(std::move(right)) {}
 
-    void accept(Visitor& visitor) override {
+    void accept(Visitor<void>& visitor) override {
         visitor.visit_binary_expression(*this);
+    }
+
+    virtual auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
+        -> std::unique_ptr<Expression> override {
+        return visitor.visit_binary_expression(*this);
     }
 
     std::unique_ptr<Expression> left;
@@ -238,8 +270,13 @@ class UnaryExpression: public Expression {
         Expression(loc, opcode),
         left(std::move(left)) {}
 
-    void accept(Visitor& visitor) override {
+    void accept(Visitor<void>& visitor) override {
         visitor.visit_unary_expression(*this);
+    }
+
+    virtual auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
+        -> std::unique_ptr<Expression> override {
+        return visitor.visit_unary_expression(*this);
     }
 
     std::unique_ptr<Expression> left;
@@ -250,7 +287,9 @@ class Statement {
     Statement(location& loc) : line_number(loc.begin.line) {}
 
     virtual ~Statement() = default;
-    virtual void accept(Visitor& visitor) = 0;
+    virtual void accept(Visitor<void>& visitor) = 0;
+    virtual auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
+        -> std::unique_ptr<Expression> = 0;
     int line_number;
 };
 
@@ -260,8 +299,13 @@ class ExpressionStatement: public Statement {
         Statement(loc),
         expression(std::move(expression)) {}
 
-    void accept(Visitor& visitor) override {
+    void accept(Visitor<void>& visitor) override {
         visitor.visit_expression_statement(*this);
+    }
+
+    auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
+        -> std::unique_ptr<Expression> override {
+        return visitor.visit_expression_statement(*this);
     }
 
     std::unique_ptr<Expression> expression;
@@ -278,8 +322,13 @@ class WaitStatement: public Statement {
         id_list(std::move(id_list)),
         expression(std::move(expression)) {}
 
-    void accept(Visitor& visitor) override {
+    void accept(Visitor<void>& visitor) override {
         visitor.visit_wait_statement(*this);
+    }
+
+    auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
+        -> std::unique_ptr<Expression> override {
+        return visitor.visit_wait_statement(*this);
     }
 
     std::vector<std::string> id_list;
@@ -296,8 +345,13 @@ class StatementList {
     virtual ~StatementList() = default;
     std::vector<std::unique_ptr<Statement>> inner;
 
-    void accept(Visitor& visitor) {
+    void accept(Visitor<void>& visitor) {
         visitor.visit_statement_list(*this);
+    }
+
+    auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
+        -> std::unique_ptr<Expression> {
+        return visitor.visit_statement_list(*this);
     }
 };
 

@@ -5,7 +5,7 @@
 
 namespace dgeval::ast {
 
-class Checker: public Visitor {
+class Checker: public Visitor<void> {
     Opcode opcode;
     std::stack<std::vector<TypeDescriptor>> expression_part_types;
     std::vector<Message> errors;

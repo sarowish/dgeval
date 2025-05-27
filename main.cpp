@@ -1,6 +1,7 @@
 #include "checker.hpp"
 #include "dependency.hpp"
 #include "driver.hpp"
+#include "fold.hpp"
 #include "printer.hpp"
 
 auto main(int argc, char** argv) -> int {
@@ -26,6 +27,11 @@ auto main(int argc, char** argv) -> int {
         driver.program->accept(dependency);
         dgeval::ast::Checker checker;
         driver.program->accept(checker);
+    }
+
+    if (driver.program->messages.size() == 1) {
+        dgeval::ast::Fold folder;
+        driver.program->accept(folder);
     }
 
     dgeval::ast::Printer printer(file_name);

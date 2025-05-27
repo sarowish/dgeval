@@ -5,7 +5,7 @@
 
 namespace dgeval::ast {
 
-class Printer: public Visitor {
+class Printer: public Visitor<void> {
     std::ofstream output;
 
   public:

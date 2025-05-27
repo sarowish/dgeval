@@ -37,8 +37,13 @@ class Program {
     Program(std::unique_ptr<StatementList> statements) :
         statements(std::move(statements)) {}
 
-    void accept(Visitor& visitor) {
+    void accept(Visitor<void>& visitor) {
         visitor.visit_program(*this);
+    }
+
+    auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
+        -> std::unique_ptr<Expression> {
+        return visitor.visit_program(*this);
     }
 
     void sort_messages() {
