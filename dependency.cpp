@@ -43,7 +43,7 @@ void Dependency::visit_program(Program& program) {
     for (auto const& [symbol, rel] : symbols) {
         for (auto defining : rel.defines) {
             if (!statements->inner[defining]) {
-                program.symbol_table[symbol] = NONE;
+                program.symbol_table[symbol].type_desc = NONE;
             }
         }
     }
@@ -52,6 +52,12 @@ void Dependency::visit_program(Program& program) {
         if (in_degree[idx] != 0) {
             circular.push_back(std::move(statements->inner[idx]));
         }
+    }
+
+    int idNdx = 0;
+
+    for (auto& [_, descriptor] : program.symbol_table) {
+        descriptor.idx = idNdx++;
     }
 
     program.circular_statements =

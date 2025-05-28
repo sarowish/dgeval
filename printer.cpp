@@ -19,10 +19,10 @@ void Printer::visit_program(Program& program) {
     auto& messages = program.messages;
     output << ", \"symbols\": [";
     for (auto symbol = symbols.begin(); symbol != symbols.end();) {
-        const int type = std::to_underlying(symbol->second.type);
+        const int type = std::to_underlying(symbol->second.type_desc.type);
         output << "{\"name\": \"" << symbol->first << "\"," << "\"type\": \""
                << TYPE_STR[type] << "\","
-               << "\"dim\": " << symbol->second.dimension << "}";
+               << "\"dim\": " << symbol->second.type_desc.dimension << "}";
 
         if (++symbol != symbols.end()) {
             output << ", ";
@@ -82,13 +82,13 @@ void Printer::visit_expression(Expression& expression) {
     int const opcode = std::to_underlying(expression.opcode);
     int const type = std::to_underlying(expression.type_desc.type);
 
-    output << "{\"lineNumber\": " << expression.loc.begin.line << ","
-           << "\"nodeType\": \"expression node\","
-           << "\"opCode\": " << opcode << ","
-           << "\"mnemonic\": \"" << MNEMONICS[opcode] << "\", "
-           << "\"typeCode\": " << type << ","
-           << "\"type\": \"" << TYPE_STR[type] << "\","
-           << "\"dim\": " << expression.type_desc.dimension;
+    output << "{\"lineNumber\": " << expression.loc.begin.line
+           << ", \"nodeType\": \"expression node\""
+           << ", \"opCode\": " << opcode << ", \"mnemonic\": \""
+           << MNEMONICS[opcode] << "\", \"typeCode\": " << type
+           << ", \"type\": \"" << TYPE_STR[type]
+           << "\", \"dim\": " << expression.type_desc.dimension
+           << ", \"idNdx\": " << expression.idNdx;
 }
 
 void Printer::visit_number(NumberLiteral& number) {

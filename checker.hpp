@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stack>
+#include "ast.hpp"
 #include "context.hpp"
 
 namespace dgeval::ast {
@@ -9,7 +10,7 @@ class Checker: public Visitor<void> {
     Opcode opcode;
     std::stack<std::vector<TypeDescriptor>> expression_part_types;
     std::vector<Message> errors;
-    std::unordered_map<std::string, TypeDescriptor> symbol_table;
+    std::unordered_map<std::string, SymbolDescriptor> symbol_table;
 
   public:
     void visit_program(Program& program) override;

@@ -55,6 +55,8 @@ void Checker::visit_array(ArrayLiteral& array) {
     if (array.items) {
         expression_part_types.emplace();
         array.items->accept(*this);
+        array.function_call_count += array.items->function_call_count;
+        array.assignment_count += array.items->assignment_count;
         auto types = expression_part_types.top();
         if (!std::ranges::all_of(types, [&](TypeDescriptor type) {
                 return type == array.items->type_desc;
@@ -74,7 +76,11 @@ void Checker::visit_array(ArrayLiteral& array) {
 
 void Checker::visit_identifier(Identifier& identifier) {
     if (symbol_table.contains(identifier.id)) {
-        identifier.type_desc = symbol_table[identifier.id];
+        auto const& symbol = symbol_table[identifier.id];
+        identifier.type_desc = symbol.type_desc;
+        if (opcode != Opcode::Assign) {
+            identifier.idNdx = symbol.idx;
+        }
     } else if (RUNTIME_LIBRARY.contains(identifier.id)) {
         if (opcode == Opcode::Call) {
             identifier.type_desc =
@@ -99,6 +105,8 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
 
     opcode = binary_expr.opcode;
     left->accept(*this);
+    binary_expr.function_call_count += left->function_call_count;
+    binary_expr.assignment_count += left->assignment_count;
     opcode = Opcode::None;
 
     if (right) {
@@ -106,6 +114,8 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
             expression_part_types.emplace();
         }
         right->accept(*this);
+        binary_expr.function_call_count += right->function_call_count;
+        binary_expr.assignment_count += right->assignment_count;
     }
 
     if (binary_expr.opcode != Opcode::Assign
@@ -128,7 +138,7 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                         "Cannot redefine runtime library function name `" + id
                             + "` as a variable name"
                     );
-                } else if (symbol_table[id] != NONE) {
+                } else if (symbol_table[id].type_desc != NONE) {
                     errors.emplace_back(
                         binary_expr.loc,
                         "The variable `" + id + "` has already been defined"
@@ -136,7 +146,9 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                 } else {
                     binary_expr.type_desc = right->type_desc;
                     binary_expr.left->type_desc = right->type_desc;
-                    symbol_table[id] = binary_expr.type_desc;
+                    symbol_table[id].type_desc = binary_expr.type_desc;
+                    binary_expr.idNdx = symbol_table[id].idx;
+                    binary_expr.assignment_count++;
                 }
             } else {
                 errors.emplace_back(
@@ -327,6 +339,8 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                     }
                 }
                 binary_expr.type_desc = left->type_desc;
+                binary_expr.idNdx = RUNTIME_LIBRARY.at(func_id).idNdx;
+                binary_expr.function_call_count++;
             }
             if (right) {
                 expression_part_types.pop();
@@ -334,6 +348,7 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
             break;
         case Opcode::Comma:
             binary_expr.type_desc = left->type_desc;
+            binary_expr.stack_load += left->stack_load;
 
             if (!expression_part_types.empty()) {
                 expression_part_types.top().push_back(right->type_desc);
@@ -349,6 +364,8 @@ void Checker::visit_unary_expression(UnaryExpression& unary_expr) {
     auto& left = unary_expr.left;
 
     left->accept(*this);
+    unary_expr.function_call_count += left->function_call_count;
+    unary_expr.assignment_count += left->assignment_count;
 
     if (left->type_desc.type == Type::None) {
         return;

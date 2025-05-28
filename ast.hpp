@@ -1,7 +1,7 @@
 #pragma once
 
+#include <map>
 #include <memory>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 #include "location.hpp"
@@ -31,14 +31,20 @@ enum class Opcode : std::uint8_t {
     Not = 18,
     ArrayAccess = 19,
     Call = 20,
-    Identifier = 23,
-    Literal = 24,
+    Jump = 21,
+    JumpFalse = 22,
+    JumpTrue = 23,
+    Identifier = 24,
+    Literal = 25,
+    CallLRT = 26,
+    Pop = 27,
 };
 
-const std::array<std::string, 25> MNEMONICS = {
-    "nop", "comma", "assign", "cond", "alt", "band", "bor",  "eq",  "neq",
-    "lt",  "lte",   "gt",     "gte",  "add", "sub",  "mul",  "div", "minus",
-    "not", "aa",    "call",   "jmp",  "jf",  "id",   "const"
+const std::array<std::string, 28> MNEMONICS = {
+    "nop", "comma", "assign", "cond",  "alt",   "band", "bor",
+    "eq",  "neq",   "lt",     "lte",   "gt",    "gte",  "add",
+    "sub", "mul",   "div",    "minus", "not",   "aa",   "call",
+    "jmp", "jf",    "jt",     "id",    "const", "lrt",  "pop"
 };
 
 const std::array<std::string, 21> OPERATOR_SYMBOLS = {
@@ -95,31 +101,37 @@ inline constexpr TypeDescriptor BOOLEAN(Type::Boolean);
 
 class FunctionSignature {
   public:
+    int idNdx;
     TypeDescriptor return_type;
     size_t parameter_count;
     std::vector<TypeDescriptor> parameters;
 };
 
-const std::unordered_map<std::string, FunctionSignature> RUNTIME_LIBRARY = {
-    {"stddev", {NUMBER, 1, {{Type::Number, 1}}}},
-    {"mean", {NUMBER, 1, {{Type::Number, 1}}}},
-    {"count", {NUMBER, 1, {{Type::Number, 1}}}},
-    {"min", {NUMBER, 1, {{Type::Number, 1}}}},
-    {"max", {NUMBER, 1, {{Type::Number, 1}}}},
-    {"sin", {NUMBER, 1, {NUMBER}}},
-    {"cos", {NUMBER, 1, {NUMBER}}},
-    {"tan", {NUMBER, 1, {NUMBER}}},
-    {"pi", {NUMBER, 0}},
-    {"atan", {NUMBER, 1, {NUMBER}}},
-    {"asin", {NUMBER, 1, {NUMBER}}},
-    {"acos", {NUMBER, 1, {NUMBER}}},
-    {"exp", {NUMBER, 1, {NUMBER}}},
-    {"ln", {NUMBER, 1, {NUMBER}}},
-    {"print", {NUMBER, 1, {STRING}}},
-    {"random", {NUMBER, 1, {NUMBER}}},
-    {"len", {NUMBER, 1, {STRING}}},
-    {"right", {NUMBER, 2, {STRING, NUMBER}}},
-    {"left", {NUMBER, 2, {STRING, NUMBER}}},
+const std::map<std::string, FunctionSignature> RUNTIME_LIBRARY = {
+    {"stddev", {0, NUMBER, 1, {{Type::Number, 1}}}},
+    {"mean", {1, NUMBER, 1, {{Type::Number, 1}}}},
+    {"count", {2, NUMBER, 1, {{Type::Number, 1}}}},
+    {"min", {3, NUMBER, 1, {{Type::Number, 1}}}},
+    {"max", {4, NUMBER, 1, {{Type::Number, 1}}}},
+    {"sin", {5, NUMBER, 1, {NUMBER}}},
+    {"cos", {6, NUMBER, 1, {NUMBER}}},
+    {"tan", {7, NUMBER, 1, {NUMBER}}},
+    {"pi", {8, NUMBER, 0}},
+    {"atan", {9, NUMBER, 1, {NUMBER}}},
+    {"asin", {10, NUMBER, 1, {NUMBER}}},
+    {"acos", {11, NUMBER, 1, {NUMBER}}},
+    {"exp", {12, NUMBER, 1, {NUMBER}}},
+    {"ln", {13, NUMBER, 1, {NUMBER}}},
+    {"print", {14, NUMBER, 1, {STRING}}},
+    {"random", {15, NUMBER, 1, {NUMBER}}},
+    {"len", {16, NUMBER, 1, {STRING}}},
+    {"right", {17, NUMBER, 2, {STRING, NUMBER}}},
+    {"left", {18, NUMBER, 2, {STRING, NUMBER}}},
+};
+
+struct SymbolDescriptor {
+    TypeDescriptor type_desc;
+    int idx {-1};
 };
 
 class Expression {
@@ -141,6 +153,10 @@ class Expression {
     location loc;
     Opcode opcode {};
     TypeDescriptor type_desc;
+    int idNdx {-1};
+    int stack_load {1};
+    int function_call_count {0};
+    int assignment_count {0};
 };
 
 class NumberLiteral: public Expression {
