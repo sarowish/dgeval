@@ -4,8 +4,11 @@
 #include <optional>
 #include <unordered_map>
 #include "ast.hpp"
+#include "intermediate_code.hpp"
 
 namespace dgeval::ast {
+
+class Instruction;
 
 enum class MessageSeverity : std::uint8_t {
     Info,
@@ -64,6 +67,7 @@ class Program {
     std::unique_ptr<StatementList> statements;
     std::unordered_map<std::string, SymbolDescriptor> symbol_table;
     std::unique_ptr<StatementList> circular_statements;
+    std::vector<Instruction> instructions;
     std::vector<Message> messages;
 };
 

@@ -231,6 +231,7 @@ class ArrayLiteral: public Expression {
     }
 
     std::unique_ptr<Expression> items;
+    size_t item_count {};
 };
 
 class Identifier: public Expression {
@@ -300,20 +301,22 @@ class UnaryExpression: public Expression {
 
 class Statement {
   public:
-    Statement(location& loc) : line_number(loc.begin.line) {}
+    Statement(location& loc, std::unique_ptr<Expression> expression) :
+        line_number(loc.begin.line),
+        expression(std::move(expression)) {}
 
     virtual ~Statement() = default;
     virtual void accept(Visitor<void>& visitor) = 0;
     virtual auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
         -> std::unique_ptr<Expression> = 0;
     int line_number;
+    std::unique_ptr<Expression> expression;
 };
 
 class ExpressionStatement: public Statement {
   public:
     ExpressionStatement(location& loc, std::unique_ptr<Expression> expression) :
-        Statement(loc),
-        expression(std::move(expression)) {}
+        Statement(loc, std::move(expression)) {}
 
     void accept(Visitor<void>& visitor) override {
         visitor.visit_expression_statement(*this);
@@ -323,8 +326,6 @@ class ExpressionStatement: public Statement {
         -> std::unique_ptr<Expression> override {
         return visitor.visit_expression_statement(*this);
     }
-
-    std::unique_ptr<Expression> expression;
 };
 
 class WaitStatement: public Statement {
@@ -334,9 +335,8 @@ class WaitStatement: public Statement {
         std::vector<std::string> id_list,
         std::unique_ptr<Expression> expression
     ) :
-        Statement(loc),
-        id_list(std::move(id_list)),
-        expression(std::move(expression)) {}
+        Statement(loc, std::move(expression)),
+        id_list(std::move(id_list)) {}
 
     void accept(Visitor<void>& visitor) override {
         visitor.visit_wait_statement(*this);
@@ -348,7 +348,6 @@ class WaitStatement: public Statement {
     }
 
     std::vector<std::string> id_list;
-    std::unique_ptr<Expression> expression;
 };
 
 class StatementList {

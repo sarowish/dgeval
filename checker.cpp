@@ -67,6 +67,7 @@ void Checker::visit_array(ArrayLiteral& array) {
             );
         }
         array.type_desc = array.items->type_desc;
+        array.item_count = types.size() + 1;
         expression_part_types.pop();
     } else {
         array.type_desc = NONE;

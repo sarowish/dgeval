@@ -1,4 +1,5 @@
 #include "printer.hpp"
+#include <iomanip>
 
 namespace dgeval::ast {
 
@@ -11,11 +12,42 @@ void join_strings(std::ofstream& output, std::vector<std::string>& strings) {
     }
 }
 
+void print_ic(
+    const std::string& file_name,
+    const std::vector<Instruction>& instructions
+) {
+    std::ofstream output(file_name);
+
+    for (int idx = 0; idx < instructions.size(); ++idx) {
+        auto const& instruction = instructions[idx];
+        output << std::setfill('0') << std::setw(5) << idx << ' '
+               << std::setfill(' ') << std::setw(6) << std::left
+               << MNEMONICS[std::to_underlying(instruction.opcode)]
+               << std::setw(4) << std::right << instruction.parameter
+               << " type:["
+               << TYPE_STR[std::to_underlying(instruction.type.type)] << ':'
+               << instruction.type.dimension << "] ";
+
+        auto const& value = instruction.value;
+
+        if (std::holds_alternative<double>(value)) {
+            output << get<double>(value);
+        } else if (std::holds_alternative<std::string>(value)) {
+            output << '"' << get<std::string>(value) << '"';
+        } else if (std::holds_alternative<bool>(value)) {
+            output << get<bool>(value);
+        }
+
+        output << std::endl;
+    }
+}
+
 void Printer::visit_program(Program& program) {
     output << "{\"circularStatements\": ";
     program.circular_statements->accept(*this);
 
     auto& symbols = program.symbol_table;
+    auto& instructions = program.instructions;
     auto& messages = program.messages;
     output << ", \"symbols\": [";
     for (auto symbol = symbols.begin(); symbol != symbols.end();) {
@@ -32,8 +64,36 @@ void Printer::visit_program(Program& program) {
     output << "], \"executableStatements\": ";
     program.statements->accept(*this);
 
+    output << ", \"ic\": [";
+    for (auto instruction = instructions.begin();
+         instruction != instructions.end();) {
+        int const opcode = std::to_underlying(instruction->opcode);
+        int const type = std::to_underlying(instruction->type.type);
+
+        output << "{\"mnemonic\": \"" << MNEMONICS[opcode]
+               << "\", \"opCode\": " << opcode << ", \"type\": " << type
+               << ", \"p1\": " << instruction->parameter
+               << ", \"dim\": " << instruction->type.dimension;
+
+        auto const& value = instruction->value;
+
+        if (std::holds_alternative<double>(value)) {
+            output << ", \"value\": " << get<double>(value);
+        } else if (std::holds_alternative<std::string>(value)) {
+            output << ", \"value\": \"" << get<std::string>(value) << "\"";
+        } else if (std::holds_alternative<bool>(value)) {
+            output << ", \"value\": " << get<bool>(value);
+        }
+
+        output << "}";
+
+        if (++instruction != instructions.end()) {
+            output << ", ";
+        }
+    }
+
     program.sort_messages();
-    output << ", \"messages\": [";
+    output << "], \"messages\": [";
     for (auto msg = messages.begin(); msg != messages.end();) {
         output << "\"";
         if (msg->loc.has_value()) {

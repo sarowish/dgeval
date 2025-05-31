@@ -44,6 +44,8 @@ auto Fold::visit_number(NumberLiteral& number) -> std::unique_ptr<Expression> {
 }
 
 auto Fold::visit_string(StringLiteral& string) -> std::unique_ptr<Expression> {
+    string.opcode = Opcode::CallLRT;
+    string.idNdx = 3;
     return nullptr;
 }
 
@@ -53,6 +55,15 @@ auto Fold::visit_boolean(BooleanLiteral& boolean)
 }
 
 auto Fold::visit_array(ArrayLiteral& array) -> std::unique_ptr<Expression> {
+    if (array.items) {
+        if (auto r = array.items->accept(*this)) {
+            array.items = std::move(r);
+        }
+    }
+
+    array.opcode = Opcode::CallLRT;
+    array.idNdx = 0;
+
     return nullptr;
 }
 
@@ -65,6 +76,7 @@ auto Fold::visit_binary_expression(BinaryExpression& binary_expr)
     -> std::unique_ptr<Expression> {
     auto& left = binary_expr.left;
     auto& right = binary_expr.right;
+    int comparison_parameter = 0;
 
     if (auto l = binary_expr.left->accept(*this)) {
         binary_expr.left = std::move(l);
@@ -75,7 +87,20 @@ auto Fold::visit_binary_expression(BinaryExpression& binary_expr)
 
     switch (binary_expr.opcode) {
         case Opcode::Add:
-            return reduce_addition(binary_expr);
+            if (auto result = reduce_addition(binary_expr)) {
+                if (result->type_desc == STRING) {
+                    result->accept(*this);
+                }
+                return result;
+            } else if (left->type_desc == STRING
+                       || right->type_desc == STRING) {
+                binary_expr.opcode = Opcode::CallLRT;
+                binary_expr.idNdx = 4;
+            } else if (left->type_desc.dimension != 0) {
+                binary_expr.opcode = Opcode::CallLRT;
+                binary_expr.idNdx = 2;
+            }
+            break;
         case Opcode::Subtract:
             return reduce_subtraction(binary_expr);
         case Opcode::Multiply:
@@ -85,15 +110,35 @@ auto Fold::visit_binary_expression(BinaryExpression& binary_expr)
         case Opcode::And:
         case Opcode::Or:
             return reduce_logical(binary_expr);
-        case Opcode::Less:
         case Opcode::LessEqual:
-        case Opcode::Greater:
+            comparison_parameter++;
         case Opcode::GreaterEqual:
-        case Opcode::Equal:
+            comparison_parameter++;
+        case Opcode::Less:
+            comparison_parameter++;
+        case Opcode::Greater:
+            comparison_parameter++;
         case Opcode::NotEqual:
-            return reduce_comparison(binary_expr);
+            comparison_parameter++;
+        case Opcode::Equal:
+            if (auto result = reduce_comparison(binary_expr)) {
+                return result;
+            } else if (left->type_desc == STRING) {
+                binary_expr.opcode = Opcode::CallLRT;
+                binary_expr.idNdx = 6;
+                binary_expr.stack_load = comparison_parameter;
+            } else if (left->type_desc.dimension != 0) {
+                binary_expr.opcode = Opcode::CallLRT;
+                binary_expr.idNdx = 7;
+                binary_expr.stack_load = comparison_parameter;
+            }
+            break;
         case Opcode::Conditional:
             return reduce_ternary(binary_expr);
+        case Opcode::ArrayAccess:
+            binary_expr.opcode = Opcode::CallLRT;
+            binary_expr.idNdx = 1;
+            break;
         default:
             break;
     }

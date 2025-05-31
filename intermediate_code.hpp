@@ -1,16 +1,37 @@
 #pragma once
 
-#include <fstream>
+#include <variant>
 #include "context.hpp"
 
 namespace dgeval::ast {
 
-class Printer: public Visitor<void> {
-    std::ofstream output;
-
+class Instruction {
   public:
-    Printer(const std::string& file_name) : output(file_name + ".json") {}
+    Instruction(TypeDescriptor type) : type(type), opcode(Opcode::Literal) {}
 
+    Instruction(Expression& expr) :
+        opcode(expr.opcode),
+        parameter(expr.idNdx),
+        type(expr.type_desc) {}
+
+    Instruction(Opcode opcode, int parameter) :
+        opcode(opcode),
+        parameter(parameter) {}
+
+    Instruction(Opcode opcode, int parameter, TypeDescriptor type) :
+        opcode(opcode),
+        parameter(parameter != -1 ? parameter : 0),
+        type(type) {}
+
+    Opcode opcode {Opcode::None};
+    int parameter {};
+    int code_offset {};
+    TypeDescriptor type;
+    std::variant<std::monostate, double, std::string, bool> value;
+};
+
+class IntermediateCode: public Visitor<void> {
+  public:
     void visit_program(Program& program) override;
     void visit_statement_list(StatementList& statements) override;
     void visit_expression_statement(ExpressionStatement& statement) override;
@@ -23,12 +44,9 @@ class Printer: public Visitor<void> {
     void visit_identifier(Identifier& identifier) override;
     void visit_binary_expression(BinaryExpression& binary_expr) override;
     void visit_unary_expression(UnaryExpression& unary_expr) override;
-};
+    void push_pop(int count);
 
-void join_strings(std::ofstream& output, std::vector<std::string>& strings);
-void print_ic(
-    const std::string& file_name,
-    const std::vector<Instruction>& instructions
-);
+    std::vector<Instruction> instructions;
+};
 
 } // namespace dgeval::ast

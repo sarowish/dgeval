@@ -20,6 +20,7 @@ auto main(int argc, char** argv) -> int {
     }
 
     Driver driver;
+    dgeval::ast::Printer printer(file_name);
     int res = driver.parse(input);
 
     if (res == 0) {
@@ -32,9 +33,11 @@ auto main(int argc, char** argv) -> int {
     if (driver.program->messages.size() == 1) {
         dgeval::ast::Fold folder;
         driver.program->accept(folder);
+        dgeval::ast::IntermediateCode ic;
+        driver.program->accept(ic);
+        print_ic(file_name + "-IC.txt", driver.program->instructions);
     }
 
-    dgeval::ast::Printer printer(file_name);
     driver.program->accept(printer);
 
     return res;
