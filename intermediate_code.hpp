@@ -32,6 +32,10 @@ class Instruction {
 
 class IntermediateCode: public Visitor<void> {
   public:
+    IntermediateCode(OptimizationFlags flags) :
+        skip_dead_statements(flags[Optimization::DeadStatement]),
+        skip_dead_parts(flags[Optimization::DeadExpressionPart]) {}
+
     void visit_program(Program& program) override;
     void visit_statement_list(StatementList& statements) override;
     void visit_expression_statement(ExpressionStatement& statement) override;
@@ -45,8 +49,12 @@ class IntermediateCode: public Visitor<void> {
     void visit_binary_expression(BinaryExpression& binary_expr) override;
     void visit_unary_expression(UnaryExpression& unary_expr) override;
     void push_pop(int count);
+    void switch_context(Expression& expression, bool context);
 
     std::vector<Instruction> instructions;
+    bool skip_dead_statements {true};
+    bool skip_dead_parts {true};
+    bool in_context {false};
 };
 
 } // namespace dgeval::ast

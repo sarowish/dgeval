@@ -10,9 +10,10 @@ void IntermediateCode::visit_program(Program& program) {
 
 void IntermediateCode::visit_statement_list(StatementList& statements) {
     for (auto& statement : statements.inner) {
-        statement->accept(*this);
-
-        push_pop(statement->expression->stack_load);
+        if (!skip_dead_statements || statement->expression->is_effective()) {
+            statement->accept(*this);
+            push_pop(statement->expression->stack_load);
+        }
     }
 
     instructions.emplace_back(Opcode::CallLRT, 8);
@@ -47,7 +48,7 @@ void IntermediateCode::visit_boolean(BooleanLiteral& boolean) {
 
 void IntermediateCode::visit_array(ArrayLiteral& array) {
     if (array.items) {
-        array.items->accept(*this);
+        switch_context(*array.items, true);
     }
 
     instructions.emplace_back(array);
@@ -73,7 +74,8 @@ void IntermediateCode::visit_binary_expression(BinaryExpression& binary_expr) {
     }
 
     if (left->opcode == Opcode::Comma && binary_expr.opcode != Opcode::Comma) {
-        push_pop(--left->stack_load);
+        push_pop(left->stack_load - 1);
+        left->stack_load = 1;
     }
 
     if (binary_expr.opcode == Opcode::Conditional) {
@@ -85,32 +87,47 @@ void IntermediateCode::visit_binary_expression(BinaryExpression& binary_expr) {
         start = instructions.size() - 1;
     }
 
-    right->accept(*this);
+    if (binary_expr.opcode == Opcode::Call) {
+        switch_context(*right, true);
+    } else if (binary_expr.opcode != Opcode::Comma || !skip_dead_parts
+               || right->is_effective() || in_context) {
+        if (right->opcode == Opcode::Comma) {
+            switch_context(*right, false);
+        } else {
+            right->accept(*this);
+        }
+    } else {
+        --right->stack_load;
+    }
 
     if (right->opcode == Opcode::Comma && binary_expr.opcode != Opcode::Call) {
-        push_pop(--right->stack_load);
+        push_pop(right->stack_load - 1);
+        right->stack_load = 1;
     }
 
-    if (binary_expr.opcode == Opcode::Alt) {
-        instructions[start].parameter = instructions.size();
-        return;
-    } else if (binary_expr.opcode == Opcode::Conditional
-               || binary_expr.opcode == Opcode::Comma) {
-        return;
-    }
+    switch (binary_expr.opcode) {
+        case Opcode::Alt:
+            instructions[start].parameter = instructions.size();
+            break;
+        case Opcode::Comma:
+            binary_expr.stack_load = left->stack_load + right->stack_load;
+            break;
+        case Opcode::Conditional:
+            break;
+        default:
+            instructions.emplace_back(
+                binary_expr.opcode,
+                binary_expr.idNdx,
+                binary_expr.type_desc
+            );
 
-    instructions.emplace_back(
-        binary_expr.opcode,
-        binary_expr.idNdx,
-        binary_expr.type_desc
-    );
-
-    if (binary_expr.opcode == Opcode::CallLRT
-        && (binary_expr.idNdx == 6 || binary_expr.idNdx == 7)) {
-        instructions.back().value = (double)binary_expr.stack_load;
-    } else if (binary_expr.opcode == Opcode::Assign) {
-        auto const& id = dynamic_cast<Identifier*>(left.get())->id;
-        instructions.back().value = id;
+            if (binary_expr.opcode == Opcode::CallLRT
+                && (binary_expr.idNdx == 6 || binary_expr.idNdx == 7)) {
+                instructions.back().value = (double)binary_expr.stack_load;
+            } else if (binary_expr.opcode == Opcode::Assign) {
+                auto const& id = dynamic_cast<Identifier*>(left.get())->id;
+                instructions.back().value = id;
+            }
     }
 }
 
@@ -125,7 +142,16 @@ void IntermediateCode::visit_unary_expression(UnaryExpression& unary_expr) {
 }
 
 void IntermediateCode::push_pop(int count) {
-    instructions.emplace_back(Opcode::Pop, count);
+    if (count != 0) {
+        instructions.emplace_back(Opcode::Pop, count);
+    }
+}
+
+void IntermediateCode::switch_context(Expression& expression, bool context) {
+    bool temp = in_context;
+    in_context = context;
+    expression.accept(*this);
+    in_context = temp;
 }
 
 } // namespace dgeval::ast

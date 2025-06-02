@@ -150,6 +150,15 @@ class Expression {
     virtual auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
         -> std::unique_ptr<Expression> = 0;
 
+    auto is_effective() -> bool {
+        return function_call_count || assignment_count;
+    }
+
+    void offload_count(Expression const& expression) {
+        function_call_count += expression.function_call_count;
+        assignment_count += expression.assignment_count;
+    }
+
     location loc;
     Opcode opcode {};
     TypeDescriptor type_desc;

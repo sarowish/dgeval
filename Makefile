@@ -8,7 +8,7 @@ project3: $(OBJ)
 
 main.o: main.cpp checker.hpp ast.hpp location.hpp visitor.hpp context.hpp \
   intermediate_code.hpp dependency.hpp driver.hpp parser.hpp fold.hpp \
-  printer.hpp
+  printer.hpp optimize.hpp
 
 driver.o: driver.cpp driver.hpp parser.hpp context.hpp ast.hpp \
   location.hpp visitor.hpp intermediate_code.hpp scanner.hpp

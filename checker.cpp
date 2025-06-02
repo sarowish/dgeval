@@ -55,8 +55,7 @@ void Checker::visit_array(ArrayLiteral& array) {
     if (array.items) {
         expression_part_types.emplace();
         array.items->accept(*this);
-        array.function_call_count += array.items->function_call_count;
-        array.assignment_count += array.items->assignment_count;
+        array.offload_count(*array.items);
         auto types = expression_part_types.top();
         if (!std::ranges::all_of(types, [&](TypeDescriptor type) {
                 return type == array.items->type_desc;
@@ -106,8 +105,7 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
 
     opcode = binary_expr.opcode;
     left->accept(*this);
-    binary_expr.function_call_count += left->function_call_count;
-    binary_expr.assignment_count += left->assignment_count;
+    binary_expr.offload_count(*left);
     opcode = Opcode::None;
 
     if (right) {
@@ -115,8 +113,7 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
             expression_part_types.emplace();
         }
         right->accept(*this);
-        binary_expr.function_call_count += right->function_call_count;
-        binary_expr.assignment_count += right->assignment_count;
+        binary_expr.offload_count(*right);
     }
 
     if (binary_expr.opcode != Opcode::Assign
@@ -349,7 +346,7 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
             break;
         case Opcode::Comma:
             binary_expr.type_desc = left->type_desc;
-            binary_expr.stack_load += left->stack_load;
+            // binary_expr.stack_load += left->stack_load;
 
             if (!expression_part_types.empty()) {
                 expression_part_types.top().push_back(right->type_desc);
@@ -365,8 +362,7 @@ void Checker::visit_unary_expression(UnaryExpression& unary_expr) {
     auto& left = unary_expr.left;
 
     left->accept(*this);
-    unary_expr.function_call_count += left->function_call_count;
-    unary_expr.assignment_count += left->assignment_count;
+    unary_expr.offload_count(*left);
 
     if (left->type_desc.type == Type::None) {
         return;

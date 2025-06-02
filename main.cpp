@@ -2,16 +2,52 @@
 #include "dependency.hpp"
 #include "driver.hpp"
 #include "fold.hpp"
+#include "optimize.hpp"
 #include "printer.hpp"
 
 auto main(int argc, char** argv) -> int {
-    if (argc != 2) {
-        std::cout << "Exactly one input file needs to be provided."
-                  << std::endl;
+    if (argc != 2 && argc != 3) {
+        std::cout
+            << "Usage is " << argv[0]
+            << " <optional optimization parameter> <dgeval module file name"
+            << std::endl;
         return 1;
     }
 
-    std::string file_name = std::string(argv[1]);
+    dgeval::ast::OptimizationFlags optimization;
+
+    if (argc == 3) {
+        std::string flag = argv[1];
+
+        if (flag.length() <= 2 || !flag.starts_with("-p")) {
+            std::cout << "Invalid optimization flag." << std::endl;
+            return 1;
+        }
+
+        int parameter;
+        auto result = std::from_chars(
+            flag.data() + 2,
+            flag.data() + flag.size(),
+            parameter
+        );
+
+        if (result.ec != std::errc()) {
+            std::cout << "-p flag must be followed by a valid integer."
+                      << std::endl;
+            return 1;
+        }
+
+        if (parameter < 0 || parameter > 0b1111) {
+            std::cout
+                << "Invalid optimization value after -p. It must be between 0 and 15."
+                << std::endl;
+            return 1;
+        }
+
+        optimization = dgeval::ast::OptimizationFlags(parameter);
+    }
+
+    std::string file_name = std::string(argv[argc - 1]);
     std::ifstream input(file_name + ".txt");
 
     if (!input.is_open()) {
@@ -33,7 +69,7 @@ auto main(int argc, char** argv) -> int {
     if (driver.program->messages.size() == 1) {
         dgeval::ast::Fold folder;
         driver.program->accept(folder);
-        dgeval::ast::IntermediateCode ic;
+        dgeval::ast::IntermediateCode ic(optimization);
         driver.program->accept(ic);
         print_ic(file_name + "-IC.txt", driver.program->instructions);
     }

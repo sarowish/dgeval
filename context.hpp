@@ -4,6 +4,7 @@
 #include <optional>
 #include <unordered_map>
 #include "ast.hpp"
+#include "optimize.hpp"
 #include "intermediate_code.hpp"
 
 namespace dgeval::ast {
