@@ -3,6 +3,10 @@
 
 namespace dgeval::ast {
 
+IntermediateCode::IntermediateCode(OptimizationFlags flags) :
+    skip_dead_statements(flags[Optimization::DeadStatement]),
+    skip_dead_parts(flags[Optimization::DeadExpressionPart]) {}
+
 void IntermediateCode::visit_program(Program& program) {
     program.statements->accept(*this);
     program.instructions = std::move(instructions);

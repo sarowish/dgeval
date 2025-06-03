@@ -71,6 +71,11 @@ auto main(int argc, char** argv) -> int {
         driver.program->accept(folder);
         dgeval::ast::IntermediateCode ic(optimization);
         driver.program->accept(ic);
+        dgeval::ast::Peephole peephole(
+            driver.program->instructions,
+            optimization
+        );
+        peephole.uuh();
         print_ic(file_name + "-IC.txt", driver.program->instructions);
     }
 

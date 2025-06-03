@@ -1,5 +1,5 @@
 CXX = g++
-SRC = main.cpp driver.cpp parser.cpp scanner.cpp printer.cpp dependency.cpp checker.cpp fold.cpp intermediate_code.cpp
+SRC = main.cpp driver.cpp parser.cpp scanner.cpp printer.cpp dependency.cpp checker.cpp fold.cpp intermediate_code.cpp optimize.cpp
 OBJ = ${SRC:.cpp=.o}
 CXXFLAGS = -std=c++23 -g
 

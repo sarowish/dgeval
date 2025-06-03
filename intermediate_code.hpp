@@ -2,8 +2,11 @@
 
 #include <variant>
 #include "context.hpp"
+#include "optimize.hpp"
 
 namespace dgeval::ast {
+
+class OptimizationFlags;
 
 class Instruction {
   public:
@@ -23,6 +26,11 @@ class Instruction {
         parameter(parameter != -1 ? parameter : 0),
         type(type) {}
 
+    [[nodiscard]] auto is_literal() const -> bool {
+        return opcode == Opcode::Literal
+            || opcode == Opcode::CallLRT && parameter == 3;
+    };
+
     Opcode opcode {Opcode::None};
     int parameter {};
     int code_offset {};
@@ -32,10 +40,7 @@ class Instruction {
 
 class IntermediateCode: public Visitor<void> {
   public:
-    IntermediateCode(OptimizationFlags flags) :
-        skip_dead_statements(flags[Optimization::DeadStatement]),
-        skip_dead_parts(flags[Optimization::DeadExpressionPart]) {}
-
+    IntermediateCode(OptimizationFlags flags);
     void visit_program(Program& program) override;
     void visit_statement_list(StatementList& statements) override;
     void visit_expression_statement(ExpressionStatement& statement) override;
