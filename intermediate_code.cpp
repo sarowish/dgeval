@@ -69,7 +69,8 @@ void IntermediateCode::visit_binary_expression(BinaryExpression& binary_expr) {
     auto& right = binary_expr.right;
     size_t start = instructions.size() - 1;
 
-    if (binary_expr.opcode != Opcode::Assign) {
+    if (binary_expr.opcode != Opcode::Assign
+        && binary_expr.opcode != Opcode::Call) {
         left->accept(*this);
     }
 
@@ -127,6 +128,11 @@ void IntermediateCode::visit_binary_expression(BinaryExpression& binary_expr) {
             } else if (binary_expr.opcode == Opcode::Assign) {
                 auto const& id = dynamic_cast<Identifier*>(left.get())->id;
                 instructions.back().value = id;
+            } else if (binary_expr.opcode == Opcode::Call) {
+                auto const& id = dynamic_cast<Identifier*>(left.get())->id;
+                auto& instruction = instructions.back();
+                instruction.value = id;
+                instruction.parameter = RUNTIME_LIBRARY.at(id).parameter_count;
             }
     }
 }
