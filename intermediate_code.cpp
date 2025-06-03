@@ -42,7 +42,7 @@ void IntermediateCode::visit_number(NumberLiteral& number) {
 
 void IntermediateCode::visit_string(StringLiteral& string) {
     instructions.emplace_back(string);
-    instructions.back().value = string.value;
+    instructions.back().value = string.raw_value;
 }
 
 void IntermediateCode::visit_boolean(BooleanLiteral& boolean) {
