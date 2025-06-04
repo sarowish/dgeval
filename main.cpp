@@ -75,7 +75,7 @@ auto main(int argc, char** argv) -> int {
             driver.program->instructions,
             optimization
         );
-        peephole.uuh();
+        peephole.run();
         print_ic(file_name + "-IC.txt", driver.program->instructions);
     }
 

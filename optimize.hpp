@@ -34,27 +34,37 @@ class OptimizationFlags {
 };
 
 class Window {
-    int offset {0};
-
   public:
+    Window(Instruction* start, Instruction* end);
     auto ineffective_store_load() -> bool;
     auto constant_value_sink() -> bool;
+    auto shift_at(size_t idx, int value) -> bool;
     auto shift(int value) -> bool;
-    void update_jump_location();
+    [[nodiscard]] auto last_idx() const -> size_t;
+    [[nodiscard]] auto branches_end_with_literals() const -> bool;
+    auto remove_literals(int offset) -> int;
 
     std::array<Instruction*, 3> inner;
     Instruction* end;
+    Instruction* root;
+    std::unique_ptr<Window> true_branch;
+    std::unique_ptr<Window> false_branch;
+    int offset {0};
 };
 
 class Peephole {
   public:
     Peephole(std::vector<Instruction>& instructions, OptimizationFlags flags);
-    void uuh();
-    void remove_nop();
+    void run();
+    void run_helper(Window& window);
+    void apply_removal();
 
     std::vector<Instruction>& instructions;
     bool optimize_offload {true};
     bool optimize_const_sink {true};
 };
+
+auto follow_jumps(std::vector<Instruction>& instructions, Instruction* start)
+    -> Instruction*;
 
 } // namespace dgeval::ast

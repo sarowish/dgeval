@@ -1,12 +1,12 @@
 #pragma once
 
 #include <variant>
-#include "context.hpp"
-#include "optimize.hpp"
+#include "ast.hpp"
 
 namespace dgeval::ast {
 
 class OptimizationFlags;
+class Program;
 
 class Instruction {
   public:

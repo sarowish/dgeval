@@ -8,8 +8,6 @@
 
 namespace dgeval::ast {
 
-class Instruction;
-
 enum class MessageSeverity : std::uint8_t {
     Info,
     Warning,

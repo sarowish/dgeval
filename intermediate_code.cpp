@@ -1,5 +1,6 @@
 #include "intermediate_code.hpp"
-#include "ast.hpp"
+#include "context.hpp"
+#include "optimize.hpp"
 
 namespace dgeval::ast {
 
