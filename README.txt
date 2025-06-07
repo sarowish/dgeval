@@ -7,5 +7,5 @@ make
 # Running the program
 
 ```
-./project3 [input_file]
+./project4 [optimization_parameter] <input_file>
 ```

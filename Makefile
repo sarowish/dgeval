@@ -3,7 +3,7 @@ SRC = main.cpp driver.cpp parser.cpp scanner.cpp printer.cpp dependency.cpp chec
 OBJ = ${SRC:.cpp=.o}
 CXXFLAGS = -std=c++23 -g
 
-project3: $(OBJ)
+project4: $(OBJ)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 main.o: main.cpp checker.hpp ast.hpp location.hpp visitor.hpp context.hpp \
@@ -41,7 +41,7 @@ scanner.cpp: scanner.ll scanner.hpp
 	flex -o $@ $<
 
 clean:
-	rm $(OBJ) scanner.cpp parser.{cpp,hpp} project3
+	rm $(OBJ) scanner.cpp parser.{cpp,hpp} project4
 
 clean_output:
 	rm *.json
