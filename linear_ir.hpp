@@ -38,9 +38,9 @@ class Instruction {
     std::variant<std::monostate, double, std::string, bool> value;
 };
 
-class IntermediateCode: public Visitor<void> {
+class LinearIR: public Visitor<void> {
   public:
-    IntermediateCode(OptimizationFlags flags);
+    LinearIR(OptimizationFlags flags);
     void visit_program(Program& program) override;
     void visit_statement_list(StatementList& statements) override;
     void visit_expression_statement(ExpressionStatement& statement) override;

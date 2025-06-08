@@ -1,19 +1,19 @@
-#include "intermediate_code.hpp"
+#include "linear_ir.hpp"
 #include "context.hpp"
 #include "optimize.hpp"
 
 namespace dgeval::ast {
 
-IntermediateCode::IntermediateCode(OptimizationFlags flags) :
+LinearIR::LinearIR(OptimizationFlags flags) :
     skip_dead_statements(flags[Optimization::DeadStatement]),
     skip_dead_parts(flags[Optimization::DeadExpressionPart]) {}
 
-void IntermediateCode::visit_program(Program& program) {
+void LinearIR::visit_program(Program& program) {
     program.statements->accept(*this);
     program.instructions = std::move(instructions);
 }
 
-void IntermediateCode::visit_statement_list(StatementList& statements) {
+void LinearIR::visit_statement_list(StatementList& statements) {
     for (auto& statement : statements.inner) {
         if (!skip_dead_statements || statement->expression->is_effective()) {
             statement->accept(*this);
@@ -25,33 +25,32 @@ void IntermediateCode::visit_statement_list(StatementList& statements) {
     instructions.back().value = 0.0;
 }
 
-void IntermediateCode::visit_expression_statement(ExpressionStatement& statement
-) {
+void LinearIR::visit_expression_statement(ExpressionStatement& statement) {
     statement.expression->accept(*this);
 }
 
-void IntermediateCode::visit_wait_statement(WaitStatement& statement) {
+void LinearIR::visit_wait_statement(WaitStatement& statement) {
     statement.expression->accept(*this);
 }
 
-void IntermediateCode::visit_expression(Expression& expression) {}
+void LinearIR::visit_expression(Expression& expression) {}
 
-void IntermediateCode::visit_number(NumberLiteral& number) {
+void LinearIR::visit_number(NumberLiteral& number) {
     instructions.emplace_back(number.type_desc);
     instructions.back().value = number.value;
 }
 
-void IntermediateCode::visit_string(StringLiteral& string) {
+void LinearIR::visit_string(StringLiteral& string) {
     instructions.emplace_back(string);
     instructions.back().value = string.raw_value;
 }
 
-void IntermediateCode::visit_boolean(BooleanLiteral& boolean) {
+void LinearIR::visit_boolean(BooleanLiteral& boolean) {
     instructions.emplace_back(boolean.type_desc);
     instructions.back().value = boolean.value;
 }
 
-void IntermediateCode::visit_array(ArrayLiteral& array) {
+void LinearIR::visit_array(ArrayLiteral& array) {
     if (array.items) {
         switch_context(*array.items, true);
     }
@@ -60,7 +59,7 @@ void IntermediateCode::visit_array(ArrayLiteral& array) {
     instructions.back().value = (double)array.item_count;
 }
 
-void IntermediateCode::visit_identifier(Identifier& identifier) {
+void LinearIR::visit_identifier(Identifier& identifier) {
     instructions.emplace_back(
         identifier.opcode,
         identifier.idNdx,
@@ -69,7 +68,7 @@ void IntermediateCode::visit_identifier(Identifier& identifier) {
     instructions.back().value = identifier.id;
 }
 
-void IntermediateCode::visit_binary_expression(BinaryExpression& binary_expr) {
+void LinearIR::visit_binary_expression(BinaryExpression& binary_expr) {
     auto& left = binary_expr.left;
     auto& right = binary_expr.right;
     size_t start = instructions.size() - 1;
@@ -142,7 +141,7 @@ void IntermediateCode::visit_binary_expression(BinaryExpression& binary_expr) {
     }
 }
 
-void IntermediateCode::visit_unary_expression(UnaryExpression& unary_expr) {
+void LinearIR::visit_unary_expression(UnaryExpression& unary_expr) {
     unary_expr.left->accept(*this);
 
     instructions.emplace_back(
@@ -152,13 +151,13 @@ void IntermediateCode::visit_unary_expression(UnaryExpression& unary_expr) {
     );
 }
 
-void IntermediateCode::push_pop(int count) {
+void LinearIR::push_pop(int count) {
     if (count != 0) {
         instructions.emplace_back(Opcode::Pop, count);
     }
 }
 
-void IntermediateCode::switch_context(Expression& expression, bool context) {
+void LinearIR::switch_context(Expression& expression, bool context) {
     bool temp = in_context;
     in_context = context;
     expression.accept(*this);

@@ -4,7 +4,7 @@
 #include <optional>
 #include <unordered_map>
 #include "ast.hpp"
-#include "intermediate_code.hpp"
+#include "linear_ir.hpp"
 
 namespace dgeval::ast {
 

@@ -3,7 +3,7 @@
 #include <bitset>
 #include <cstdint>
 #include <utility>
-#include "intermediate_code.hpp"
+#include "linear_ir.hpp"
 
 namespace dgeval::ast {
 

@@ -69,7 +69,7 @@ auto main(int argc, char** argv) -> int {
     if (driver.program->messages.size() == 1) {
         dgeval::ast::Fold folder;
         driver.program->accept(folder);
-        dgeval::ast::IntermediateCode ic(optimization);
+        dgeval::ast::LinearIR ic(optimization);
         driver.program->accept(ic);
         dgeval::ast::Peephole peephole(
             driver.program->instructions,
