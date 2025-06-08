@@ -1,4 +1,5 @@
 #include "checker.hpp"
+#include "codegen.hpp"
 #include "dependency.hpp"
 #include "driver.hpp"
 #include "fold.hpp"
@@ -80,6 +81,12 @@ auto main(int argc, char** argv) -> int {
     }
 
     driver.program->accept(printer);
+
+    Codegen uuh;
+
+    DynamicFunction* f = uuh.run(*driver.program);
+
+    f();
 
     return res;
 }

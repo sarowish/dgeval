@@ -63,6 +63,7 @@ auto Fold::visit_array(ArrayLiteral& array) -> std::unique_ptr<Expression> {
 
     array.opcode = Opcode::CallLRT;
     array.idNdx = 0;
+    --array.type_desc.dimension;
 
     return nullptr;
 }
@@ -93,7 +94,7 @@ auto Fold::visit_binary_expression(BinaryExpression& binary_expr)
                 }
                 return result;
             } else if (left->type_desc == STRING
-                       || right->type_desc == STRING) {
+                       && right->type_desc == STRING) {
                 binary_expr.opcode = Opcode::CallLRT;
                 binary_expr.idNdx = 4;
             } else if (left->type_desc.dimension != 0) {
