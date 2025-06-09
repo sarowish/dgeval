@@ -313,6 +313,20 @@ auto reduce_logical(BinaryExpression& binary_expr)
     return nullptr;
 }
 
+auto convert_to_str(std::unique_ptr<Expression> number)
+    -> std::unique_ptr<Expression> {
+    auto lrt = std::make_unique<UnaryExpression>(
+        number->loc,
+        std::move(number),
+        Opcode::CallLRT
+    );
+
+    lrt->idNdx = 5;
+    lrt->type_desc = STRING;
+
+    return lrt;
+}
+
 auto reduce_addition(BinaryExpression& binary_expr)
     -> std::unique_ptr<Expression> {
     auto const& ls = dynamic_cast<StringLiteral*>(binary_expr.left.get());
@@ -327,9 +341,12 @@ auto reduce_addition(BinaryExpression& binary_expr)
                 ls->value + rs->value,
                 ls->raw_value + rs->raw_value
             );
-        } else if (ls->value.empty()
-                   && binary_expr.right->type_desc == STRING) {
-            return std::move(binary_expr.right);
+        } else if (ls->value.empty()) {
+            if (binary_expr.right->type_desc == STRING) {
+                return std::move(binary_expr.right);
+            } else {
+                return convert_to_str(std::move(binary_expr.right));
+            }
         } else if (rn) {
             auto as_str = std::to_string(rn->value);
             return std::make_unique<StringLiteral>(
@@ -341,20 +358,24 @@ auto reduce_addition(BinaryExpression& binary_expr)
     }
 
     else if (rs) {
-        if (rs->value.empty() && binary_expr.left->type_desc == STRING) {
-            return std::move(binary_expr.left);
-        }
-    }
-
-    else if (ln) {
-        if (rs) {
+        if (rs->value.empty()) {
+            if (binary_expr.left->type_desc == STRING) {
+                return std::move(binary_expr.left);
+            } else {
+                return convert_to_str(std::move(binary_expr.left));
+            }
+        } else if (ln) {
             auto as_str = std::to_string(ln->value);
             return std::make_unique<StringLiteral>(
                 binary_expr.loc,
                 as_str + rs->value,
                 as_str + rs->raw_value
             );
-        } else if (rn) {
+        }
+    }
+
+    else if (ln) {
+        if (rn) {
             return std::make_unique<NumberLiteral>(
                 ln->loc,
                 ln->value + rn->value
@@ -366,6 +387,14 @@ auto reduce_addition(BinaryExpression& binary_expr)
 
     else if (rn && rn->value == 0 && binary_expr.left->type_desc == NUMBER) {
         return std::move(binary_expr.left);
+    }
+
+    if (binary_expr.left->type_desc == NUMBER
+        && binary_expr.right->type_desc == STRING) {
+        binary_expr.left = convert_to_str(std::move(binary_expr.left));
+    } else if (binary_expr.left->type_desc == STRING
+               && binary_expr.right->type_desc == NUMBER) {
+        binary_expr.right = convert_to_str(std::move(binary_expr.right));
     }
 
     return nullptr;
