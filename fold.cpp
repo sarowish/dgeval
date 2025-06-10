@@ -82,8 +82,11 @@ auto Fold::visit_binary_expression(BinaryExpression& binary_expr)
     if (auto l = binary_expr.left->accept(*this)) {
         binary_expr.left = std::move(l);
     }
-    if (auto r = binary_expr.right->accept(*this)) {
-        binary_expr.right = std::move(r);
+
+    if (right) {
+        if (auto r = binary_expr.right->accept(*this)) {
+            binary_expr.right = std::move(r);
+        }
     }
 
     switch (binary_expr.opcode) {

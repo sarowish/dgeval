@@ -93,7 +93,9 @@ void LinearIR::visit_binary_expression(BinaryExpression& binary_expr) {
     }
 
     if (binary_expr.opcode == Opcode::Call) {
-        switch_context(*right, true);
+        if (right) {
+            switch_context(*right, true);
+        }
     } else if (binary_expr.opcode != Opcode::Comma || !skip_dead_parts
                || right->is_effective() || in_context) {
         if (right->opcode == Opcode::Comma) {
@@ -105,7 +107,8 @@ void LinearIR::visit_binary_expression(BinaryExpression& binary_expr) {
         --right->stack_load;
     }
 
-    if (right->opcode == Opcode::Comma && binary_expr.opcode != Opcode::Call) {
+    if (right && right->opcode == Opcode::Comma
+        && binary_expr.opcode != Opcode::Call) {
         push_pop(right->stack_load - 1);
         right->stack_load = 1;
     }
