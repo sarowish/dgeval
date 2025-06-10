@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 #include "location.hpp"
+#include "runtime_library.hpp"
 #include "visitor.hpp"
 
 namespace dgeval::ast {
@@ -101,6 +102,7 @@ inline constexpr TypeDescriptor BOOLEAN(Type::Boolean);
 
 class FunctionSignature {
   public:
+    void* entry_point;
     int idNdx;
     TypeDescriptor return_type;
     size_t parameter_count;
@@ -108,25 +110,25 @@ class FunctionSignature {
 };
 
 const std::map<std::string, FunctionSignature> RUNTIME_LIBRARY = {
-    {"stddev", {0, NUMBER, 1, {{Type::Number, 1}}}},
-    {"mean", {1, NUMBER, 1, {{Type::Number, 1}}}},
-    {"count", {2, NUMBER, 1, {{Type::Number, 1}}}},
-    {"min", {3, NUMBER, 1, {{Type::Number, 1}}}},
-    {"max", {4, NUMBER, 1, {{Type::Number, 1}}}},
-    {"sin", {5, NUMBER, 1, {NUMBER}}},
-    {"cos", {6, NUMBER, 1, {NUMBER}}},
-    {"tan", {7, NUMBER, 1, {NUMBER}}},
-    {"pi", {8, NUMBER, 0}},
-    {"atan", {9, NUMBER, 1, {NUMBER}}},
-    {"asin", {10, NUMBER, 1, {NUMBER}}},
-    {"acos", {11, NUMBER, 1, {NUMBER}}},
-    {"exp", {12, NUMBER, 1, {NUMBER}}},
-    {"ln", {13, NUMBER, 1, {NUMBER}}},
-    {"print", {14, NUMBER, 1, {STRING}}},
-    {"random", {15, NUMBER, 1, {NUMBER}}},
-    {"len", {16, NUMBER, 1, {STRING}}},
-    {"right", {17, NUMBER, 2, {STRING, NUMBER}}},
-    {"left", {18, NUMBER, 2, {STRING, NUMBER}}},
+    {"stddev", {(void*)lib::stddev, 0, NUMBER, 1, {{Type::Number, 1}}}},
+    {"mean", {(void*)lib::mean, 1, NUMBER, 1, {{Type::Number, 1}}}},
+    {"count", {(void*)lib::count, 2, NUMBER, 1, {{Type::Number, 1}}}},
+    {"min", {(void*)lib::min, 3, NUMBER, 1, {{Type::Number, 1}}}},
+    {"max", {(void*)lib::max, 4, NUMBER, 1, {{Type::Number, 1}}}},
+    {"sin", {(void*)lib::sin, 5, NUMBER, 1, {NUMBER}}},
+    {"cos", {(void*)lib::cos, 6, NUMBER, 1, {NUMBER}}},
+    {"tan", {(void*)lib::tan, 7, NUMBER, 1, {NUMBER}}},
+    {"pi", {(void*)lib::pi, 8, NUMBER, 0}},
+    {"atan", {(void*)lib::atan, 9, NUMBER, 1, {NUMBER}}},
+    {"asin", {(void*)lib::asin, 10, NUMBER, 1, {NUMBER}}},
+    {"acos", {(void*)lib::acos, 11, NUMBER, 1, {NUMBER}}},
+    {"exp", {(void*)lib::exp, 12, NUMBER, 1, {NUMBER}}},
+    {"ln", {(void*)lib::ln, 13, NUMBER, 1, {NUMBER}}},
+    {"print", {(void*)lib::print, 14, NUMBER, 1, {STRING}}},
+    {"random", {(void*)lib::random, 15, NUMBER, 1, {NUMBER}}},
+    {"len", {(void*)lib::len, 16, NUMBER, 1, {STRING}}},
+    {"right", {(void*)lib::right, 17, STRING, 2, {STRING, NUMBER}}},
+    {"left", {(void*)lib::left, 18, STRING, 2, {STRING, NUMBER}}},
 };
 
 struct SymbolDescriptor {

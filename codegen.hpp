@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <initializer_list>
 #include "context.hpp"
-#include "runtime_library.hpp"
+#include "lang_runtime.hpp"
 
 using dgeval::ast::FunctionSignature;
 using dgeval::ast::Instruction;

@@ -6,6 +6,7 @@
 #include <variant>
 #include "ast.hpp"
 #include "linear_ir.hpp"
+#include "runtime_library.hpp"
 
 std::array<Register, 4> Codegen::registers =
     {Register::RDI, Register::RSI, Register::RDX, Register::RCX};
@@ -285,7 +286,7 @@ void Codegen::translate_instruction(Instruction& instruction) {
                 setup_immediate_integral_arg(0, (uint64_t)&runtime);
             }
 
-            emit_call((void*)lib::print);
+            emit_call(func_sig.entry_point);
             place_result_on_stack(func_sig.return_type == NUMBER);
             break;
         }
