@@ -444,11 +444,17 @@ auto reduce_multiplication(BinaryExpression& binary_expr)
             );
         } else if (ln->value == 0) {
             return std::make_unique<NumberLiteral>(ln->loc, 0);
+        } else if (ln->value == 1) {
+            return std::move(binary_expr.right);
         }
     }
 
-    else if (rn && rn->value == 0) {
-        return std::make_unique<NumberLiteral>(rn->loc, 0);
+    else if (rn) {
+        if (rn->value == 0) {
+            return std::make_unique<NumberLiteral>(rn->loc, 0);
+        } else if (rn->value == 1) {
+            return std::move(binary_expr.left);
+        }
     }
 
     return nullptr;
