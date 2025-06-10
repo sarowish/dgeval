@@ -292,7 +292,7 @@ auto reduce_logical(BinaryExpression& binary_expr)
                 if (rb->value) {
                     return std::move(binary_expr.left);
                 } else {
-                    return std::make_unique<BooleanLiteral>(lb->loc, false);
+                    return std::make_unique<BooleanLiteral>(rb->loc, false);
                 }
             }
             break;
@@ -305,7 +305,7 @@ auto reduce_logical(BinaryExpression& binary_expr)
                 }
             } else if (rb) {
                 if (rb->value) {
-                    return std::make_unique<BooleanLiteral>(lb->loc, true);
+                    return std::make_unique<BooleanLiteral>(rb->loc, true);
                 } else {
                     return std::move(binary_expr.left);
                 }
