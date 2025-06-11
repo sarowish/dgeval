@@ -337,7 +337,7 @@ void Codegen::translate_instruction(Instruction& instruction) {
                     setup_argument(1, false);
                     setup_immediate_integral_arg(0, (uint64_t)&runtime);
                     emit_call((void*)lib::Runtime::array_element);
-                    place_result_on_stack(instruction.type == NUMBER);
+                    place_result_on_stack(false);
 
                     setup_immediate_integral_arg(0, (uint64_t)&runtime);
                     emit_call((void*)lib::Runtime::check_exception);

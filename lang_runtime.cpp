@@ -91,7 +91,7 @@ auto Runtime::array_element(Runtime* runtime, Array* array, int64_t index)
     if (array->type.dimension == 0) {
         switch (array->type.type) {
             case Type::Boolean: {
-                ArrayBool* bool_array = (ArrayBool*)array;
+                auto* bool_array = dynamic_cast<ArrayBool*>(array);
 
                 runtime->exception =
                     index < 0 || index >= (int64_t)bool_array->inner->size();
@@ -101,7 +101,7 @@ auto Runtime::array_element(Runtime* runtime, Array* array, int64_t index)
                 }
             } break;
             case Type::String: {
-                ArrayString* string_array = (ArrayString*)array;
+                auto* string_array = dynamic_cast<ArrayString*>(array);
 
                 runtime->exception =
                     index < 0 || index >= (int64_t)string_array->inner->size();
@@ -111,21 +111,22 @@ auto Runtime::array_element(Runtime* runtime, Array* array, int64_t index)
                 }
             } break;
             case Type::Number: {
-                ArrayDouble* double_array = (ArrayDouble*)array;
+                auto* double_array = dynamic_cast<ArrayDouble*>(array);
 
                 runtime->exception =
                     index < 0 || index >= (int64_t)double_array->inner->size();
 
                 if (!runtime->exception) {
-                    double num = (*double_array->inner)[index];
-                    return *(uint64_t*)&num;
+                    return std::bit_cast<uint64_t>(
+                        (*double_array->inner)[index]
+                    );
                 }
             } break;
             default:
                 break;
         }
     } else {
-        ArrayArray* array_array = (ArrayArray*)array;
+        auto* array_array = dynamic_cast<ArrayArray*>(array);
 
         runtime->exception =
             index < 0 || index >= (int64_t)array_array->inner->size();
