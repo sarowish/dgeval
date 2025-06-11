@@ -27,7 +27,7 @@ auto max(ArrayDouble* array) -> double {
 }
 
 auto print(std::string& str) -> double {
-    std::cout << str << std::endl;
+    std::cout << str;
     return str.length();
 }
 
