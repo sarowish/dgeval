@@ -41,7 +41,7 @@ void Codegen::emit_code_fragment(T code_fragment) {
     }
 }
 
-void* Codegen::create_code_base() {
+auto Codegen::create_code_base() -> void* {
     int page_size = getpagesize();
     size_t page_count = (code_len + page_size - 1) / page_size;
     size_t alloc_size = page_size * page_count;
@@ -411,7 +411,7 @@ void Codegen::backpatch_instructions(std::vector<Instruction>& instructions) {
     }
 }
 
-DynamicFunction* Codegen::run(Program& program) {
+auto Codegen::generate(Program& program) -> DynamicFunction* {
     emit_prologue(program.symbol_table.size());
 
     for (auto& instruction : program.instructions) {

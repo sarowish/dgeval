@@ -82,11 +82,14 @@ auto main(int argc, char** argv) -> int {
 
     driver.program->accept(printer);
 
-    Codegen uuh;
+    if (driver.program->messages.size() == 1) {
+        Codegen codegen;
+        DynamicFunction* func = codegen.generate(*driver.program);
 
-    DynamicFunction* f = uuh.run(*driver.program);
-
-    f();
+        if (func) {
+            func();
+        }
+    }
 
     return res;
 }

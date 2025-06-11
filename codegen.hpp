@@ -20,7 +20,7 @@ const int DELTA = 16;
 
 enum class Register : uint8_t { RAX, RCX, RDX, RBX, RSP, RBP, RSI, RDI };
 
-typedef void DynamicFunction();
+using DynamicFunction = void();
 
 class Codegen {
   public:
@@ -28,7 +28,7 @@ class Codegen {
     void emit_bytes(std::initializer_list<uint8_t> bytes);
     template<typename T>
     void emit_code_fragment(T code_fragment);
-    void* create_code_base();
+    auto create_code_base() -> void*;
     void emit_prologue(int variable_count);
     void emit_epilogue();
     void xmm_arith_instruction(uint8_t critical_byte);
@@ -41,7 +41,7 @@ class Codegen {
     void place_result_on_stack(bool is_double);
     void translate_instruction(Instruction& instruction);
     void backpatch_instructions(std::vector<Instruction>& instructions);
-    DynamicFunction* run(Program& program);
+    auto generate(Program& program) -> DynamicFunction*;
 
     lib::Runtime runtime;
     static std::array<Register, 4> registers;
