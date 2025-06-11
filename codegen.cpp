@@ -104,7 +104,7 @@ void Codegen::comparison_instruction(
     TypeDescriptor type_desc,
     uint8_t critical_byte
 ) {
-    if (type_desc.dimension > 0) {
+    if (type_desc.is_array()) {
         setup_argument(1, false);
         setup_argument(0, false);
         emit_call((void*)lib::Runtime::arrcmp);

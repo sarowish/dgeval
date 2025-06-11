@@ -63,7 +63,9 @@ auto Runtime::allocate_array(
 ) -> Array* {
     Array* array;
 
-    if (type.dimension == 0) {
+    if (type.is_array()) {
+        array = new ArrayArray(type, (ArrayArray**)base, len);
+    } else {
         switch (type.type) {
             case Type::Boolean:
                 array = new ArrayBool((int64_t*)base, len);
@@ -77,8 +79,6 @@ auto Runtime::allocate_array(
             default:
                 break;
         }
-    } else {
-        array = new ArrayArray(type, (ArrayArray**)base, len);
     }
 
     runtime->register_array_object(array);
@@ -88,7 +88,16 @@ auto Runtime::allocate_array(
 
 auto Runtime::array_element(Runtime* runtime, Array* array, int64_t index)
     -> uint64_t {
-    if (array->type.dimension == 0) {
+    if (array->type.is_array()) {
+        auto* array_array = dynamic_cast<ArrayArray*>(array);
+
+        runtime->exception =
+            index < 0 || index >= (int64_t)array_array->inner->size();
+
+        if (!runtime->exception) {
+            return (uint64_t)(*array_array->inner)[index];
+        }
+    } else {
         switch (array->type.type) {
             case Type::Boolean: {
                 auto* bool_array = dynamic_cast<ArrayBool*>(array);
@@ -125,22 +134,15 @@ auto Runtime::array_element(Runtime* runtime, Array* array, int64_t index)
             default:
                 break;
         }
-    } else {
-        auto* array_array = dynamic_cast<ArrayArray*>(array);
-
-        runtime->exception =
-            index < 0 || index >= (int64_t)array_array->inner->size();
-
-        if (!runtime->exception) {
-            return (uint64_t)(*array_array->inner)[index];
-        }
     }
 
     return 0;
 }
 
 auto Runtime::append_element(Array* array, uint64_t value) -> Array* {
-    if (array->type.dimension == 0) {
+    if (array->type.is_array()) {
+        ((ArrayArray*)array)->inner->push_back((ArrayArray*)value);
+    } else {
         switch (array->type.type) {
             case Type::Boolean:
                 ((ArrayBool*)array)->inner->push_back((bool)value);
@@ -155,8 +157,6 @@ auto Runtime::append_element(Array* array, uint64_t value) -> Array* {
             default:
                 break;
         }
-    } else {
-        ((ArrayArray*)array)->inner->push_back((ArrayArray*)value);
     }
 
     return array;
