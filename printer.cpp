@@ -207,10 +207,8 @@ void Printer::visit_boolean(BooleanLiteral& boolean) {
 
 void Printer::visit_array(ArrayLiteral& array) {
     visit_expression(array);
-    if (array.items) {
-        output << ", \"left\": ";
-        array.items->accept(*this);
-    }
+    output << ", \"left\": ";
+    array.items->accept(*this);
     output << "}";
 }
 

@@ -51,9 +51,7 @@ void LinearIR::visit_boolean(BooleanLiteral& boolean) {
 }
 
 void LinearIR::visit_array(ArrayLiteral& array) {
-    if (array.items) {
-        switch_context(*array.items, true);
-    }
+    switch_context(*array.items, true);
 
     instructions.emplace_back(array);
     instructions.back().value = (double)array.item_count;

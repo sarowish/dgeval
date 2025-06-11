@@ -55,10 +55,8 @@ auto Fold::visit_boolean(BooleanLiteral& boolean)
 }
 
 auto Fold::visit_array(ArrayLiteral& array) -> std::unique_ptr<Expression> {
-    if (array.items) {
-        if (auto r = array.items->accept(*this)) {
-            array.items = std::move(r);
-        }
+    if (auto r = array.items->accept(*this)) {
+        array.items = std::move(r);
     }
 
     array.opcode = Opcode::CallLRT;

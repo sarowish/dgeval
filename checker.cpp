@@ -51,25 +51,22 @@ void Checker::visit_string(StringLiteral& string) {}
 void Checker::visit_boolean(BooleanLiteral& boolean) {}
 
 void Checker::visit_array(ArrayLiteral& array) {
-    if (array.items) {
-        expression_part_types.emplace();
-        array.items->accept(*this);
-        array.offload_count(*array.items);
-        auto types = expression_part_types.top();
-        if (!std::ranges::all_of(types, [&](TypeDescriptor type) {
-                return type == array.items->type_desc;
-            })) {
-            errors.emplace_back(
-                array.loc,
-                "All items of an array should be of the same type"
-            );
-        }
-        array.type_desc = array.items->type_desc;
-        array.item_count = types.size() + 1;
-        expression_part_types.pop();
-    } else {
-        array.type_desc = NONE;
+    expression_part_types.emplace();
+    array.items->accept(*this);
+    array.offload_count(*array.items);
+    auto types = expression_part_types.top();
+    if (!std::ranges::all_of(types, [&](TypeDescriptor type) {
+            return type == array.items->type_desc;
+        })) {
+        errors.emplace_back(
+            array.loc,
+            "All items of an array should be of the same type"
+        );
     }
+    array.type_desc = array.items->type_desc;
+    array.item_count = types.size() + 1;
+    expression_part_types.pop();
+
     ++array.type_desc.dimension;
 }
 
@@ -192,8 +189,8 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                 errors.emplace_back(
                     binary_expr.loc,
                     "Operator `"
-                        + OPERATOR_SYMBOLS[std::to_underlying(binary_expr.opcode
-                        )]
+                        + OPERATOR_SYMBOLS[std::to_underlying(binary_expr
+                                                                  .opcode)]
                         + "` requires its operands to be of type `number`"
                 );
             } else {
@@ -212,9 +209,6 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
             } else if (left->type_desc.is_array()) {
                 if (left->type_desc.item_type() == right->type_desc) {
                     binary_expr.type_desc = left->type_desc;
-                } else if (left->type_desc.is_empty_array()) {
-                    binary_expr.type_desc = right->type_desc;
-                    ++binary_expr.type_desc.dimension;
                 } else {
                     errors.emplace_back(
                         binary_expr.loc,
@@ -237,8 +231,8 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                 errors.emplace_back(
                     binary_expr.loc,
                     "Operator `"
-                        + OPERATOR_SYMBOLS[std::to_underlying(binary_expr.opcode
-                        )]
+                        + OPERATOR_SYMBOLS[std::to_underlying(binary_expr
+                                                                  .opcode)]
                         + "` is not supported for `"
                         + left->type_desc.to_string() + "`"
                 );
@@ -246,8 +240,8 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                 errors.emplace_back(
                     binary_expr.loc,
                     "Operator `"
-                        + OPERATOR_SYMBOLS[std::to_underlying(binary_expr.opcode
-                        )]
+                        + OPERATOR_SYMBOLS[std::to_underlying(binary_expr
+                                                                  .opcode)]
                         + "` requires its operands to be of the same type"
 
                 );
@@ -261,8 +255,8 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                 errors.emplace_back(
                     binary_expr.loc,
                     "Operator `"
-                        + OPERATOR_SYMBOLS[std::to_underlying(binary_expr.opcode
-                        )]
+                        + OPERATOR_SYMBOLS[std::to_underlying(binary_expr
+                                                                  .opcode)]
                         + "` requires its operands to be of the same type"
 
                 );

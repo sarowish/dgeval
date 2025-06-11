@@ -72,10 +72,6 @@ class TypeDescriptor {
         return dimension != 0;
     }
 
-    auto is_empty_array() const -> bool {
-        return type == Type::None && dimension == 1;
-    }
-
     auto item_type() const -> TypeDescriptor {
         TypeDescriptor type = *this;
         --type.dimension;

@@ -94,9 +94,7 @@ void Dependency::visit_boolean(BooleanLiteral& boolean) {}
 
 void Dependency::visit_array(ArrayLiteral& array) {
     opcode = Opcode::None;
-    if (array.items) {
-        array.items->accept(*this);
-    }
+    array.items->accept(*this);
 }
 
 void Dependency::visit_identifier(Identifier& identifier) {

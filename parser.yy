@@ -114,7 +114,7 @@ literal : STRING                        { $$ = std::make_unique<ast::StringLiter
         | IDENTIFIER                    { $$ = std::make_unique<ast::Identifier>(@1, $1); }
         | "true"                        { $$ = std::make_unique<ast::BooleanLiteral>(@1, true); }
         | "false"                       { $$ = std::make_unique<ast::BooleanLiteral>(@1, false); }
-        | "[" argument_list "]"         { $$ = std::make_unique<ast::ArrayLiteral>(@1, $2); }
+        | "[" expression "]"         { $$ = std::make_unique<ast::ArrayLiteral>(@1, $2); }
         ;
 
 arithmetic_expression : expression "+" expression       { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::Add); }
