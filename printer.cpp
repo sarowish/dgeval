@@ -131,9 +131,15 @@ void Printer::visit_program(Program& program) {
         output << "\"";
         if (msg->loc.has_value()) {
             output << "Line Number " << msg->loc->begin.line << " ";
+            std::cout << "Line Number " << msg->loc->begin.line << " ";
         }
+
         output << "[" << SEVERITY_STR[std::to_underlying(msg->severity)]
                << "]: " << msg->text << ".\"";
+
+        std::cout << "[" << SEVERITY_STR[std::to_underlying(msg->severity)]
+                  << "]: " << msg->text << "." << std::endl;
+
         if (++msg != messages.end()) {
             output << ", ";
         }

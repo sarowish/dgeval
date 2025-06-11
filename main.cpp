@@ -67,6 +67,8 @@ auto main(int argc, char** argv) -> int {
         driver.program->accept(checker);
     }
 
+    driver.program->messages.emplace_back("Completed compilation");
+
     if (driver.program->messages.size() == 1) {
         dgeval::ast::Fold folder;
         driver.program->accept(folder);

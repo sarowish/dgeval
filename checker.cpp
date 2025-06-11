@@ -17,7 +17,6 @@ void Checker::visit_program(Program& program) {
 
     program.symbol_table = symbol_table;
     program.messages = errors;
-    program.messages.emplace_back("Completed compilation");
 }
 
 void Checker::visit_statement_list(StatementList& statements) {
