@@ -109,7 +109,7 @@ expression : literal
            | expression "," expression  { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::Comma); }
            ;
 
-literal : STRING                        { $$ = std::make_unique<ast::StringLiteral>(@1, $1, driver.raw_buffer); }
+literal : STRING                        { $$ = std::make_unique<ast::StringLiteral>(@1, $1); }
         | NUMBER                        { $$ = std::make_unique<ast::NumberLiteral>(@1, $1); }
         | IDENTIFIER                    { $$ = std::make_unique<ast::Identifier>(@1, $1); }
         | "true"                        { $$ = std::make_unique<ast::BooleanLiteral>(@1, true); }

@@ -26,6 +26,7 @@ class Printer: public Visitor<void> {
 };
 
 void join_strings(std::ofstream& output, std::vector<std::string>& strings);
+auto escape_string(std::string const& str) -> std::string;
 void print_ic(
     const std::string& file_name,
     const std::vector<Instruction>& instructions

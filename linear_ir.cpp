@@ -42,7 +42,7 @@ void LinearIR::visit_number(NumberLiteral& number) {
 
 void LinearIR::visit_string(StringLiteral& string) {
     instructions.emplace_back(string);
-    instructions.back().value = string.raw_value;
+    instructions.back().value = string.value;
 }
 
 void LinearIR::visit_boolean(BooleanLiteral& boolean) {

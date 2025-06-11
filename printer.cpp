@@ -12,6 +12,38 @@ void join_strings(std::ofstream& output, std::vector<std::string>& strings) {
     }
 }
 
+auto escape_string(std::string const& str) -> std::string {
+    static char const* hex_digits = "0123456789ebcdef";
+    std::string escaped;
+
+    for (auto ch : str) {
+        switch (ch) {
+            case '\n':
+                escaped += "\\n";
+                break;
+            case '\t':
+                escaped += "\\t";
+                break;
+            case '\r':
+                escaped += "\\r";
+                break;
+            case '\\':
+                escaped += "\\\\";
+                break;
+            default:
+                if (ch < 32) {
+                    escaped += "\\x";
+                    escaped += hex_digits[ch >> 4];
+                    escaped += hex_digits[ch & 0xf];
+                } else {
+                    escaped += ch;
+                }
+        }
+    }
+
+    return escaped;
+}
+
 void print_ic(
     const std::string& file_name,
     const std::vector<Instruction>& instructions
@@ -33,7 +65,7 @@ void print_ic(
         if (std::holds_alternative<double>(value)) {
             output << get<double>(value);
         } else if (std::holds_alternative<std::string>(value)) {
-            output << '"' << get<std::string>(value) << '"';
+            output << '"' << escape_string(get<std::string>(value)) << '"';
         } else if (std::holds_alternative<bool>(value)) {
             output << get<bool>(value);
         }
@@ -80,7 +112,8 @@ void Printer::visit_program(Program& program) {
         if (std::holds_alternative<double>(value)) {
             output << ", \"value\": " << get<double>(value);
         } else if (std::holds_alternative<std::string>(value)) {
-            output << ", \"value\": \"" << get<std::string>(value) << "\"";
+            output << ", \"value\": \""
+                   << escape_string(get<std::string>(value)) << "\"";
         } else if (std::holds_alternative<bool>(value)) {
             output << ", \"value\": " << get<bool>(value);
         }
@@ -158,7 +191,7 @@ void Printer::visit_number(NumberLiteral& number) {
 
 void Printer::visit_string(StringLiteral& string) {
     visit_expression(string);
-    output << ", \"stringValue\": \"" << string.raw_value << "\"}";
+    output << ", \"stringValue\": \"" << escape_string(string.value) << "\"}";
 }
 
 void Printer::visit_boolean(BooleanLiteral& boolean) {

@@ -342,8 +342,7 @@ auto reduce_addition(BinaryExpression& binary_expr)
         if (rs) {
             return std::make_unique<StringLiteral>(
                 binary_expr.loc,
-                ls->value + rs->value,
-                ls->raw_value + rs->raw_value
+                ls->value + rs->value
             );
         } else if (ls->value.empty()) {
             if (binary_expr.right->type_desc == STRING) {
@@ -355,8 +354,7 @@ auto reduce_addition(BinaryExpression& binary_expr)
             auto as_str = std::to_string(rn->value);
             return std::make_unique<StringLiteral>(
                 binary_expr.loc,
-                ls->value + as_str,
-                ls->raw_value + as_str
+                ls->value + as_str
             );
         }
     }
@@ -372,8 +370,7 @@ auto reduce_addition(BinaryExpression& binary_expr)
             auto as_str = std::to_string(ln->value);
             return std::make_unique<StringLiteral>(
                 binary_expr.loc,
-                as_str + rs->value,
-                as_str + rs->raw_value
+                as_str + rs->value
             );
         }
     }

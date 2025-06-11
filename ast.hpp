@@ -190,10 +190,9 @@ class NumberLiteral: public Expression {
 
 class StringLiteral: public Expression {
   public:
-    StringLiteral(location& loc, std::string value, std::string raw_value) :
+    StringLiteral(location& loc, std::string value) :
         Expression(loc, Type::String),
-        value(std::move(value)),
-        raw_value(std::move(raw_value)) {}
+        value(std::move(value)) {}
 
     void accept(Visitor<void>& visitor) override {
         visitor.visit_string(*this);
@@ -205,7 +204,6 @@ class StringLiteral: public Expression {
     }
 
     std::string value;
-    std::string raw_value;
 };
 
 class BooleanLiteral: public Expression {
