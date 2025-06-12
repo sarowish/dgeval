@@ -408,7 +408,7 @@ auto reduce_subtraction(BinaryExpression& binary_expr)
         if (rn) {
             return std::make_unique<NumberLiteral>(
                 ln->loc,
-                ln->value + rn->value
+                ln->value - rn->value
             );
         } else if (ln->value == 0) {
             return std::make_unique<UnaryExpression>(
