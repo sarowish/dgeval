@@ -197,6 +197,124 @@ void Codegen::place_result_on_stack(bool is_double) {
     emit_bytes({0x50});
 }
 
+void Codegen::translate_function_call(Instruction& instruction) {
+    int double_count = 0;
+    int integral_count = 0;
+    FunctionSignature const& func_sig =
+        RUNTIME_LIBRARY.at(get<std::string>(instruction.value));
+
+    for (auto parameter : func_sig.parameters) {
+        if (parameter == NUMBER) {
+            ++double_count;
+        } else {
+            ++integral_count;
+        }
+    }
+
+    if (func_sig.return_type == STRING) {
+        ++integral_count;
+    }
+
+    for (int i = func_sig.parameter_count; i > 0; --i) {
+        bool is_double = func_sig.parameters[i - 1] == NUMBER;
+
+        setup_argument(
+            is_double ? (--double_count) : (--integral_count),
+            is_double
+        );
+    }
+
+    if (func_sig.return_type == STRING) {
+        setup_immediate_integral_arg(0, (uint64_t)&runtime);
+    }
+
+    emit_call(func_sig.entry_point);
+    place_result_on_stack(func_sig.return_type == NUMBER);
+}
+
+void Codegen::translate_lrt(Instruction& instruction) {
+    switch (instruction.parameter) {
+        case 0: {
+            emit_bytes({0x48, 0x89, 0xe1});
+
+            int item_count = get<double>(instruction.value);
+            uint64_t type_desc = *(uint64_t*)&instruction.type;
+
+            setup_immediate_integral_arg(2, item_count);
+            setup_immediate_integral_arg(1, type_desc);
+            setup_immediate_integral_arg(0, (uint64_t)&runtime);
+
+            emit_call((void*)lib::Runtime::allocate_array);
+
+            emit_bytes({0x48, 0x81, 0xc4});
+            emit_code_fragment((uint32_t)(item_count * 8));
+
+            place_result_on_stack(false);
+        } break;
+        case 1:
+            setup_argument(0, true);
+            emit_bytes({0xf2, 0x48, 0x0f, 0x2d, 0xd0});
+
+            setup_argument(1, false);
+            setup_immediate_integral_arg(0, (uint64_t)&runtime);
+            emit_call((void*)lib::Runtime::array_element);
+            place_result_on_stack(false);
+
+            setup_immediate_integral_arg(0, (uint64_t)&runtime);
+            emit_call((void*)lib::Runtime::check_exception);
+
+            emit_bytes({0x48, 0x09, 0xc0});
+
+            unwind_fixups.push_back(code_len + 2);
+            emit_bytes({0x0f, 0x85, 0, 0, 0, 0});
+            break;
+        case 2:
+            setup_argument(1, false);
+            setup_argument(0, false);
+            emit_call((void*)lib::Runtime::append_element);
+            place_result_on_stack(false);
+            break;
+        case 3:
+            setup_immediate_integral_arg(
+                1,
+                (uint64_t)&get<std::string>(instruction.value)
+            );
+            setup_immediate_integral_arg(0, (uint64_t)&runtime);
+            emit_call((void*)lib::Runtime::allocate_string);
+            place_result_on_stack(false);
+            break;
+        case 4:
+            setup_argument(2, false);
+            setup_argument(1, false);
+            setup_immediate_integral_arg(0, (uint64_t)&runtime);
+            emit_call((void*)lib::Runtime::cat_string);
+            place_result_on_stack(false);
+            break;
+        case 5:
+            setup_argument(0, true);
+            setup_immediate_integral_arg(0, (uint64_t)&runtime);
+            emit_call((void*)lib::Runtime::number_to_string);
+            place_result_on_stack(false);
+            break;
+        case 6: {
+            int64_t comparison = get<bool>(instruction.value);
+            setup_immediate_integral_arg(2, comparison);
+            setup_argument(1, false);
+            setup_argument(0, false);
+            emit_call((void*)lib::Runtime::strcmp);
+            place_result_on_stack(false);
+        } break;
+        case 7: {
+            setup_argument(1, false);
+            setup_argument(0, false);
+            emit_call((void*)lib::Runtime::arrcmp);
+            place_result_on_stack(false);
+        } break;
+        default:
+            break;
+    }
+}
+
 void Codegen::translate_instruction(Instruction& instruction) {
     instruction.code_offset = code_len;
 
@@ -256,38 +374,7 @@ void Codegen::translate_instruction(Instruction& instruction) {
             emit_bytes({0x48, 0x31, 0x04, 0x24, 0xf2, 0x0f, 0x10, 0x04, 0x24});
             break;
         case Opcode::Call: {
-            int double_count = 0;
-            int integral_count = 0;
-            FunctionSignature const& func_sig =
-                RUNTIME_LIBRARY.at(get<std::string>(instruction.value));
-
-            for (auto parameter : func_sig.parameters) {
-                if (parameter == NUMBER) {
-                    ++double_count;
-                } else {
-                    ++integral_count;
-                }
-            }
-
-            if (func_sig.return_type == STRING) {
-                ++integral_count;
-            }
-
-            for (int i = func_sig.parameter_count; i > 0; --i) {
-                bool is_double = func_sig.parameters[i - 1] == NUMBER;
-
-                setup_argument(
-                    is_double ? (--double_count) : (--integral_count),
-                    is_double
-                );
-            }
-
-            if (func_sig.return_type == STRING) {
-                setup_immediate_integral_arg(0, (uint64_t)&runtime);
-            }
-
-            emit_call(func_sig.entry_point);
-            place_result_on_stack(func_sig.return_type == NUMBER);
+            translate_function_call(instruction);
             break;
         }
         case Opcode::Jump:
@@ -312,86 +399,7 @@ void Codegen::translate_instruction(Instruction& instruction) {
             }
             break;
         case Opcode::CallLRT:
-            switch (instruction.parameter) {
-                case 0: {
-                    emit_bytes({0x48, 0x89, 0xe1});
-
-                    int item_count = get<double>(instruction.value);
-                    uint64_t type_desc = *(uint64_t*)&instruction.type;
-
-                    setup_immediate_integral_arg(2, item_count);
-                    setup_immediate_integral_arg(1, type_desc);
-                    setup_immediate_integral_arg(0, (uint64_t)&runtime);
-
-                    emit_call((void*)lib::Runtime::allocate_array);
-
-                    emit_bytes({0x48, 0x81, 0xc4});
-                    emit_code_fragment((uint32_t)(item_count * 8));
-
-                    place_result_on_stack(false);
-                } break;
-                case 1:
-                    setup_argument(0, true);
-                    emit_bytes({0xf2, 0x48, 0x0f, 0x2d, 0xd0});
-
-                    setup_argument(1, false);
-                    setup_immediate_integral_arg(0, (uint64_t)&runtime);
-                    emit_call((void*)lib::Runtime::array_element);
-                    place_result_on_stack(false);
-
-                    setup_immediate_integral_arg(0, (uint64_t)&runtime);
-                    emit_call((void*)lib::Runtime::check_exception);
-
-                    emit_bytes({0x48, 0x09, 0xc0});
-
-                    unwind_fixups.push_back(code_len + 2);
-                    emit_bytes({0x0f, 0x85, 0, 0, 0, 0});
-                    break;
-                case 2:
-                    setup_argument(1, false);
-                    setup_argument(0, false);
-                    emit_call((void*)lib::Runtime::append_element);
-                    place_result_on_stack(false);
-                    break;
-                case 3:
-                    setup_immediate_integral_arg(
-                        1,
-                        (uint64_t)&get<std::string>(instruction.value)
-                    );
-                    setup_immediate_integral_arg(0, (uint64_t)&runtime);
-                    emit_call((void*)lib::Runtime::allocate_string);
-                    place_result_on_stack(false);
-                    break;
-                case 4:
-                    setup_argument(2, false);
-                    setup_argument(1, false);
-                    setup_immediate_integral_arg(0, (uint64_t)&runtime);
-                    emit_call((void*)lib::Runtime::cat_string);
-                    place_result_on_stack(false);
-                    break;
-                case 5:
-                    setup_argument(0, true);
-                    setup_immediate_integral_arg(0, (uint64_t)&runtime);
-                    emit_call((void*)lib::Runtime::number_to_string);
-                    place_result_on_stack(false);
-                    break;
-                case 6: {
-                    int64_t comparison = get<bool>(instruction.value);
-                    setup_immediate_integral_arg(2, comparison);
-                    setup_argument(1, false);
-                    setup_argument(0, false);
-                    emit_call((void*)lib::Runtime::strcmp);
-                    place_result_on_stack(false);
-                } break;
-                case 7: {
-                    setup_argument(1, false);
-                    setup_argument(0, false);
-                    emit_call((void*)lib::Runtime::arrcmp);
-                    place_result_on_stack(false);
-                } break;
-                default:
-                    break;
-            }
+            translate_lrt(instruction);
             break;
         default:
             break;

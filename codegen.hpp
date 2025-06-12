@@ -39,6 +39,8 @@ class Codegen {
     void setup_immediate_integral_arg(int idx, uint64_t arg);
     void setup_immediate_double_arg(int idx, double arg);
     void place_result_on_stack(bool is_double);
+    void translate_function_call(Instruction& instruction);
+    void translate_lrt(Instruction& instruction);
     void translate_instruction(Instruction& instruction);
     void backpatch_instructions(std::vector<Instruction>& instructions);
     auto generate(Program& program) -> DynamicFunction*;
