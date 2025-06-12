@@ -82,10 +82,10 @@ void LinearIR::visit_binary_expression(BinaryExpression& binary_expr) {
     }
 
     if (binary_expr.opcode == Opcode::Conditional) {
-        instructions.emplace_back(Opcode::JumpFalse, 0);
+        instructions.emplace_back(Opcode::JumpFalse, 0, NUMBER);
 
     } else if (binary_expr.opcode == Opcode::Alt) {
-        instructions.emplace_back(Opcode::Jump, 0);
+        instructions.emplace_back(Opcode::Jump, 0, NUMBER);
         instructions[start].parameter = instructions.size();
         start = instructions.size() - 1;
     }
@@ -114,31 +114,50 @@ void LinearIR::visit_binary_expression(BinaryExpression& binary_expr) {
     switch (binary_expr.opcode) {
         case Opcode::Alt:
             instructions[start].parameter = instructions.size();
-            break;
+            return;
         case Opcode::Comma:
             binary_expr.stack_load = left->stack_load + right->stack_load;
-            break;
+            return;
         case Opcode::Conditional:
-            break;
+            return;
         default:
-            instructions.emplace_back(
-                binary_expr.opcode,
-                binary_expr.idNdx,
-                binary_expr.type_desc
-            );
+            break;
+    }
 
-            if (binary_expr.opcode == Opcode::CallLRT
-                && (binary_expr.idNdx == 6 || binary_expr.idNdx == 7)) {
-                instructions.back().value = (double)binary_expr.stack_load;
-            } else if (binary_expr.opcode == Opcode::Assign) {
-                auto const& id = dynamic_cast<Identifier*>(left.get())->id;
-                instructions.back().value = id;
-            } else if (binary_expr.opcode == Opcode::Call) {
-                auto const& id = dynamic_cast<Identifier*>(left.get())->id;
-                auto& instruction = instructions.back();
-                instruction.value = id;
-                instruction.parameter = RUNTIME_LIBRARY.at(id).parameter_count;
+    instructions.emplace_back(
+        binary_expr.opcode,
+        binary_expr.idNdx,
+        binary_expr.type_desc
+    );
+
+    switch (binary_expr.opcode) {
+        case Opcode::CallLRT: {
+            auto& value = instructions.back().value;
+            if (binary_expr.idNdx == 6 || binary_expr.idNdx == 7) {
+                value = (double)binary_expr.stack_load;
+            } else if (std::holds_alternative<std::monostate>(value)) {
+                value = 0.0;
             }
+        } break;
+        case Opcode::Assign: {
+            auto const& id = dynamic_cast<Identifier*>(left.get())->id;
+            instructions.back().value = id;
+        } break;
+        case Opcode::Call: {
+            auto const& id = dynamic_cast<Identifier*>(left.get())->id;
+            auto& instruction = instructions.back();
+            instruction.value = id;
+            instruction.parameter = RUNTIME_LIBRARY.at(id).parameter_count;
+        } break;
+        case Opcode::LessEqual:
+        case Opcode::GreaterEqual:
+        case Opcode::Less:
+        case Opcode::Greater:
+        case Opcode::NotEqual:
+        case Opcode::Equal:
+            instructions.back().type = binary_expr.left->type_desc;
+        default:
+            break;
     }
 }
 
@@ -150,6 +169,10 @@ void LinearIR::visit_unary_expression(UnaryExpression& unary_expr) {
         unary_expr.idNdx,
         unary_expr.type_desc
     );
+
+    if (unary_expr.opcode == Opcode::CallLRT) {
+        instructions.back().value = 0.0;
+    }
 }
 
 void LinearIR::push_pop(int count) {

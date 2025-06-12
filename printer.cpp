@@ -1,5 +1,6 @@
 #include "printer.hpp"
 #include <iomanip>
+#include "ast.hpp"
 
 namespace dgeval::ast {
 
@@ -65,7 +66,11 @@ void print_ic(
         if (std::holds_alternative<double>(value)) {
             output << get<double>(value);
         } else if (std::holds_alternative<std::string>(value)) {
-            output << '"' << escape_string(get<std::string>(value)) << '"';
+            auto& str = get<std::string>(value);
+            output << '"' << escape_string(str) << '"';
+            if (instruction.opcode == Opcode::Call) {
+                output << " @" << RUNTIME_LIBRARY.at(str).idNdx;
+            }
         } else if (std::holds_alternative<bool>(value)) {
             output << get<bool>(value);
         }
