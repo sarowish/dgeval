@@ -56,7 +56,7 @@ void print_ic(
         output << std::setfill('0') << std::setw(5) << idx << ' '
                << std::setfill(' ') << std::setw(6) << std::left
                << MNEMONICS[std::to_underlying(instruction.opcode)]
-               << std::setw(4) << std::right << instruction.parameter
+               << std::setw(5) << std::right << instruction.parameter
                << " type:["
                << TYPE_STR[std::to_underlying(instruction.type.type)] << ':'
                << instruction.type.dimension << "] ";
