@@ -63,9 +63,7 @@ auto Runtime::allocate_array(
 ) -> Array* {
     Array* array;
 
-    if (type.is_array()) {
-        array = new ArrayArray(type, (ArrayArray**)base, len);
-    } else {
+    if (type.dimension == 1) {
         switch (type.type) {
             case Type::Boolean:
                 array = new ArrayBool((int64_t*)base, len);
@@ -79,6 +77,8 @@ auto Runtime::allocate_array(
             default:
                 break;
         }
+    } else {
+        array = new ArrayArray(type, (ArrayArray**)base, len);
     }
 
     runtime->register_array_object(array);

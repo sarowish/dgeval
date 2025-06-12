@@ -61,7 +61,6 @@ auto Fold::visit_array(ArrayLiteral& array) -> std::unique_ptr<Expression> {
 
     array.opcode = Opcode::CallLRT;
     array.idNdx = 0;
-    --array.type_desc.dimension;
 
     return nullptr;
 }
