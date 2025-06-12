@@ -296,9 +296,9 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
             } else {
                 auto const& func_id = dynamic_cast<Identifier*>(left.get())->id;
                 auto const& function_signature = RUNTIME_LIBRARY.at(func_id);
-                auto& argument_types = expression_part_types.top();
                 size_t argument_count = 0;
                 if (right) {
+                    auto& argument_types = expression_part_types.top();
                     argument_types.insert(
                         argument_types.begin(),
                         right->type_desc
@@ -317,6 +317,7 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                      < std::min(function_signature.parameter_count,
                                 argument_count);
                      ++idx) {
+                    auto const& argument_types = expression_part_types.top();
                     auto const& parameter = function_signature.parameters[idx];
                     auto const& argument = argument_types[idx];
                     if (argument != parameter && argument != NONE) {
