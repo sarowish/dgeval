@@ -123,7 +123,7 @@ class Runtime {
         -> std::string*;
     static auto number_to_string(Runtime* runtime, double number)
         -> std::string*;
-    static auto strcmp(std::string* s1, std::string* s2, int64_t comparision)
+    static auto strcmp(std::string* s1, std::string* s2, int64_t comparison)
         -> int64_t;
     static auto arrcmp(Array* arr1, Array* arr2) -> int64_t;
     static auto post_exec_cleanup(Runtime* runtime) -> int64_t;

@@ -297,7 +297,7 @@ void Codegen::translate_lrt(Instruction& instruction) {
             place_result_on_stack(false);
             break;
         case 6: {
-            int64_t comparison = get<bool>(instruction.value);
+            int64_t comparison = get<double>(instruction.value);
             setup_immediate_integral_arg(2, comparison);
             setup_argument(1, false);
             setup_argument(0, false);

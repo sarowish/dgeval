@@ -189,33 +189,26 @@ auto Runtime::number_to_string(Runtime* runtime, double number)
     return p;
 }
 
-auto Runtime::strcmp(std::string* s1, std::string* s2, int64_t comparision)
+auto Runtime::strcmp(std::string* s1, std::string* s2, int64_t comparison)
     -> int64_t {
-    int64_t result = 0;
     int ordering = s1->compare(*s2);
 
-    switch (comparision) {
+    switch (comparison) {
         case 0:
-            result = ordering == 0;
-            break;
+            return ordering == 0;
         case 1:
-            result = ordering != 0;
-            break;
+            return ordering != 0;
         case 2:
-            result = ordering > 0;
-            break;
+            return ordering > 0;
         case 3:
-            result = ordering < 0;
-            break;
+            return ordering < 0;
         case 4:
-            result = ordering >= 0;
-            break;
+            return ordering >= 0;
         case 5:
-            result = ordering <= 0;
-            break;
+            return ordering <= 0;
     }
 
-    return result;
+    return 0;
 }
 
 auto Runtime::arrcmp(Array* arr1, Array* arr2) -> int64_t {
