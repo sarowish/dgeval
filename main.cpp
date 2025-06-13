@@ -69,22 +69,24 @@ auto main(int argc, char** argv) -> int {
 
     driver.program->messages.emplace_back("Completed compilation");
 
-    if (driver.program->messages.size() == 1) {
+    if (!driver.program->any_errors()) {
         dgeval::ast::Fold folder;
         driver.program->accept(folder);
-        dgeval::ast::LinearIR ic(optimization);
-        driver.program->accept(ic);
-        dgeval::ast::Peephole peephole(
-            driver.program->instructions,
-            optimization
-        );
-        peephole.run();
-        print_ic(file_name + "-IC.txt", driver.program->instructions);
+        if (!driver.program->any_errors()) {
+            dgeval::ast::LinearIR ic(optimization);
+            driver.program->accept(ic);
+            dgeval::ast::Peephole peephole(
+                driver.program->instructions,
+                optimization
+            );
+            peephole.run();
+            print_ic(file_name + "-IC.txt", driver.program->instructions);
+        }
     }
 
     driver.program->accept(printer);
 
-    if (driver.program->messages.size() == 1) {
+    if (!driver.program->any_errors()) {
         Codegen codegen;
         DynamicFunction* func = codegen.generate(*driver.program);
 

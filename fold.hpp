@@ -5,6 +5,8 @@
 namespace dgeval::ast {
 
 class Fold: public Visitor<std::unique_ptr<Expression>> {
+    std::vector<Message> errors;
+
   public:
     auto visit_program(Program& program)
         -> std::unique_ptr<Expression> override;
@@ -38,8 +40,10 @@ auto reduce_subtraction(BinaryExpression& binary_expr)
     -> std::unique_ptr<Expression>;
 auto reduce_multiplication(BinaryExpression& binary_expr)
     -> std::unique_ptr<Expression>;
-auto reduce_division(BinaryExpression& binary_expr)
-    -> std::unique_ptr<Expression>;
+auto reduce_division(
+    BinaryExpression& binary_expr,
+    std::vector<Message>& errors
+) -> std::unique_ptr<Expression>;
 auto reduce_logical(BinaryExpression& binary_expr)
     -> std::unique_ptr<Expression>;
 auto reduce_comparison(BinaryExpression& binary_expr)

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <optional>
+#include <ranges>
 #include <unordered_map>
 #include "ast.hpp"
 #include "linear_ir.hpp"
@@ -54,12 +55,23 @@ class Program {
                 position const& loc_a = a.loc->begin;
                 position const& loc_b = b.loc->begin;
                 return loc_a.line < loc_b.line
-                    || (loc_a.line == loc_b.line && loc_a.column < loc_b.column
-                    );
+                    || (loc_a.line == loc_b.line
+                        && loc_a.column < loc_b.column);
             }
 
             return false;
         });
+    }
+
+    auto any_errors() -> bool {
+        return std::count_if(
+                   messages.begin(),
+                   messages.end(),
+                   [&](Message mes) {
+                       return mes.severity == MessageSeverity::Error;
+                   }
+               )
+            != 0;
     }
 
     std::unique_ptr<StatementList> statements;

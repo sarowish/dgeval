@@ -107,7 +107,7 @@ auto Fold::visit_binary_expression(BinaryExpression& binary_expr)
         case Opcode::Multiply:
             return reduce_multiplication(binary_expr);
         case Opcode::Divide:
-            return reduce_division(binary_expr);
+            return reduce_division(binary_expr, errors);
         case Opcode::And:
         case Opcode::Or:
             return reduce_logical(binary_expr);
@@ -454,15 +454,17 @@ auto reduce_multiplication(BinaryExpression& binary_expr)
     return nullptr;
 }
 
-auto reduce_division(BinaryExpression& binary_expr)
-    -> std::unique_ptr<Expression> {
+auto reduce_division(
+    BinaryExpression& binary_expr,
+    std::vector<Message>& errors
+) -> std::unique_ptr<Expression> {
     auto const& ln = dynamic_cast<NumberLiteral*>(binary_expr.left.get());
     auto const& rn = dynamic_cast<NumberLiteral*>(binary_expr.right.get());
 
     if (rn) {
         if (rn->value == 0) {
-            // todo: error here
-            return std::make_unique<NumberLiteral>(rn->loc, 0);
+            errors.emplace_back(rn->loc, "Can't divide by 0");
+            return std::make_unique<NumberLiteral>(rn->loc, 3);
         } else if (rn->value == 1) {
             return std::move(binary_expr.left);
         } else if (ln) {
