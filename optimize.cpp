@@ -29,10 +29,19 @@ auto Window::ineffective_store_load() -> bool {
 
 auto Window::constant_value_sink() -> bool {
     if (inner[0]->is_literal() && inner[1]->opcode == Opcode::Pop) {
-        offset += 2;
         inner[0]->opcode = Opcode::None;
-        inner[1]->opcode = Opcode::None;
-        shift(2);
+
+        if (inner[1]->parameter == 1) {
+            inner[1]->opcode = Opcode::None;
+            shift(2);
+            offset += 2;
+        } else {
+            --inner[1]->parameter;
+            shift_at(0, -1);
+            shift_at(2, 1);
+            offset += 1;
+        }
+
         return true;
     }
 
@@ -180,7 +189,11 @@ void Peephole::run_helper(Window& window) {
                 && follow_jumps(instructions, window.root) != continuation
                 && window.branches_end_with_literals()) {
                 window.offset += window.remove_literals(0) + 1;
-                continuation->opcode = Opcode::None;
+                if (continuation->parameter == 1) {
+                    continuation->opcode = Opcode::None;
+                } else {
+                    --continuation->parameter;
+                }
             }
 
             window.inner[0]->parameter -= window.false_branch->offset;
@@ -200,8 +213,8 @@ void Peephole::run_helper(Window& window) {
             continue;
         }
 
-        if (optimize_const_sink) {
-            window.constant_value_sink();
+        if (optimize_const_sink && window.constant_value_sink()) {
+            continue;
         }
 
         if (window.shift(1)) {
