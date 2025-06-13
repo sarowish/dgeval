@@ -4,7 +4,11 @@
 namespace dgeval::ast {
 
 auto Fold::visit_program(Program& program) -> std::unique_ptr<Expression> {
-    return program.statements->accept(*this);
+    errors = std::move(program.messages);
+    program.statements->accept(*this);
+    program.messages = std::move(errors);
+
+    return nullptr;
 }
 
 auto Fold::visit_statement_list(StatementList& statements)
@@ -282,29 +286,29 @@ auto reduce_logical(BinaryExpression& binary_expr)
             if (lb) {
                 if (lb->value) {
                     return std::move(binary_expr.right);
-                } else {
+                } else if (!binary_expr.right->is_effective()) {
                     return std::make_unique<BooleanLiteral>(lb->loc, false);
                 }
             } else if (rb) {
                 if (rb->value) {
                     return std::move(binary_expr.left);
-                } else {
+                } else if (!binary_expr.left->is_effective()) {
                     return std::make_unique<BooleanLiteral>(rb->loc, false);
                 }
             }
             break;
         case Opcode::Or:
             if (lb) {
-                if (lb->value) {
-                    return std::make_unique<BooleanLiteral>(lb->loc, true);
-                } else {
+                if (!lb->value) {
                     return std::move(binary_expr.right);
+                } else if (!binary_expr.right->is_effective()) {
+                    return std::make_unique<BooleanLiteral>(lb->loc, true);
                 }
             } else if (rb) {
-                if (rb->value) {
-                    return std::make_unique<BooleanLiteral>(rb->loc, true);
-                } else {
+                if (!rb->value) {
                     return std::move(binary_expr.left);
+                } else if (!binary_expr.left->is_effective()) {
+                    return std::make_unique<BooleanLiteral>(rb->loc, true);
                 }
             }
         default:
@@ -436,7 +440,7 @@ auto reduce_multiplication(BinaryExpression& binary_expr)
                 ln->loc,
                 ln->value * rn->value
             );
-        } else if (ln->value == 0) {
+        } else if (ln->value == 0 && !binary_expr.right->is_effective()) {
             return std::make_unique<NumberLiteral>(ln->loc, 0);
         } else if (ln->value == 1) {
             return std::move(binary_expr.right);
@@ -444,7 +448,7 @@ auto reduce_multiplication(BinaryExpression& binary_expr)
     }
 
     else if (rn) {
-        if (rn->value == 0) {
+        if (rn->value == 0 && !binary_expr.left->is_effective()) {
             return std::make_unique<NumberLiteral>(rn->loc, 0);
         } else if (rn->value == 1) {
             return std::move(binary_expr.left);
@@ -475,7 +479,7 @@ auto reduce_division(
         }
     }
 
-    else if (ln && ln->value == 0) {
+    else if (ln && ln->value == 0 && !binary_expr.right->is_effective()) {
         return std::make_unique<NumberLiteral>(ln->loc, 0);
     }
 

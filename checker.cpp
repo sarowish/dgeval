@@ -15,8 +15,8 @@ void Checker::visit_program(Program& program) {
         );
     }
 
-    program.symbol_table = symbol_table;
-    program.messages = errors;
+    program.symbol_table = std::move(symbol_table);
+    program.messages = std::move(errors);
 }
 
 void Checker::visit_statement_list(StatementList& statements) {
