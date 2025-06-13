@@ -86,14 +86,32 @@ void Printer::visit_program(Program& program) {
     auto& symbols = program.symbol_table;
     auto& instructions = program.instructions;
     auto& messages = program.messages;
+
+    std::vector<std::pair<std::string, SymbolDescriptor>> sorted_symbols;
+
+    for (auto& entry : symbols) {
+        sorted_symbols.push_back(entry);
+    }
+
+    std::sort(
+        sorted_symbols.begin(),
+        sorted_symbols.end(),
+        [&](std::pair<std::string, SymbolDescriptor> a,
+            std::pair<std::string, SymbolDescriptor> b) {
+            return a.second.idx < b.second.idx;
+            ;
+        }
+    );
+
     output << ", \"symbols\": [";
-    for (auto symbol = symbols.begin(); symbol != symbols.end();) {
+    for (auto symbol = sorted_symbols.begin();
+         symbol != sorted_symbols.end();) {
         const int type = std::to_underlying(symbol->second.type_desc.type);
         output << "{\"name\": \"" << symbol->first << "\"," << "\"type\": \""
                << TYPE_STR[type] << "\","
                << "\"dim\": " << symbol->second.type_desc.dimension << "}";
 
-        if (++symbol != symbols.end()) {
+        if (++symbol != sorted_symbols.end()) {
             output << ", ";
         }
     }

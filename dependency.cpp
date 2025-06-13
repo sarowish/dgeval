@@ -1,5 +1,4 @@
 #include "dependency.hpp"
-#include <queue>
 
 namespace dgeval::ast {
 
@@ -8,7 +7,6 @@ void Dependency::visit_program(Program& program) {
 
     statements->accept(*this);
 
-    std::queue<size_t> queue;
     std::vector<int> in_degree(statements->inner.size());
     std::vector<std::unordered_set<size_t>> relations(statements->inner.size());
     std::vector<std::unique_ptr<Statement>> sorted;
@@ -23,27 +21,33 @@ void Dependency::visit_program(Program& program) {
         }
     }
 
-    for (size_t idx = 0; idx < in_degree.size(); ++idx) {
-        if (in_degree[idx] == 0) {
-            queue.push(idx);
-        }
-    }
+    bool done = false;
+    int idNdx = 0;
 
-    for (; !queue.empty(); queue.pop()) {
-        const size_t idx = queue.front();
-        sorted.push_back(std::move(statements->inner[idx]));
+    while (!done) {
+        done = true;
 
-        for (auto const& idx : relations[idx]) {
-            if (--in_degree[idx] == 0) {
-                queue.push(idx);
-            }
-        }
-    }
+        for (size_t idx = 0; idx < statements->inner.size(); ++idx) {
+            auto& statement = statements->inner[idx];
 
-    for (auto const& [symbol, rel] : symbols) {
-        for (auto defining : rel.defines) {
-            if (!statements->inner[defining]) {
-                program.symbol_table[symbol].type_desc = NONE;
+            if (statement && in_degree[idx] == 0) {
+                sorted.push_back(std::move(statement));
+
+                for (auto const& [symbol, rel] : symbols) {
+                    for (auto defining : rel.defines) {
+                        if (idx == defining) {
+                            program.symbol_table[symbol] = {NONE, idNdx++};
+                        }
+                    }
+                }
+
+                if (!relations[idx].empty()) {
+                    done = false;
+                }
+
+                for (auto const& idx : relations[idx]) {
+                    --in_degree[idx];
+                }
             }
         }
     }
@@ -52,12 +56,6 @@ void Dependency::visit_program(Program& program) {
         if (in_degree[idx] != 0) {
             circular.push_back(std::move(statements->inner[idx]));
         }
-    }
-
-    int idNdx = 0;
-
-    for (auto& [_, descriptor] : program.symbol_table) {
-        descriptor.idx = idNdx++;
     }
 
     program.circular_statements =
