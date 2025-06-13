@@ -106,7 +106,8 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
     opcode = Opcode::None;
 
     if (right) {
-        if (binary_expr.opcode == Opcode::Call && left->type_desc != NONE) {
+        if ((binary_expr.opcode == Opcode::Call && left->type_desc != NONE)
+            || right->opcode == Opcode::Comma) {
             expression_part_types.emplace();
         }
         right->accept(*this);
@@ -341,6 +342,10 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
         case Opcode::Comma:
             binary_expr.type_desc = left->type_desc;
             // binary_expr.stack_load += left->stack_load;
+
+            if (right->opcode == Opcode::Comma) {
+                expression_part_types.pop();
+            }
 
             if (!expression_part_types.empty()) {
                 expression_part_types.top().push_back(right->type_desc);
