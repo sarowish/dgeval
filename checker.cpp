@@ -79,8 +79,9 @@ void Checker::visit_identifier(Identifier& identifier) {
         }
     } else if (RUNTIME_LIBRARY.contains(identifier.id)) {
         if (opcode == Opcode::Call) {
-            identifier.type_desc =
-                RUNTIME_LIBRARY.at(identifier.id).return_type;
+            auto& function_signature = RUNTIME_LIBRARY.at(identifier.id);
+            identifier.type_desc = function_signature.return_type;
+            identifier.idNdx = function_signature.idNdx;
         } else if (opcode != Opcode::Assign) {
             errors.emplace_back(
                 identifier.loc,
@@ -331,7 +332,6 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                     }
                 }
                 binary_expr.type_desc = left->type_desc;
-                binary_expr.idNdx = RUNTIME_LIBRARY.at(func_id).idNdx;
                 binary_expr.function_call_count++;
             }
             if (right) {

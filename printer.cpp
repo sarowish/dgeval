@@ -116,7 +116,7 @@ void Printer::visit_program(Program& program) {
         }
     }
 
-    output << "], \"executableStatements\": ";
+    output << "], \"executablestatements\": ";
     program.statements->accept(*this);
 
     output << ", \"ic\": [";
@@ -132,13 +132,28 @@ void Printer::visit_program(Program& program) {
 
         auto const& value = instruction->value;
 
-        if (std::holds_alternative<double>(value)) {
-            output << ", \"value\": " << get<double>(value);
-        } else if (std::holds_alternative<std::string>(value)) {
-            output << ", \"value\": \""
-                   << escape_string(get<std::string>(value)) << "\"";
-        } else if (std::holds_alternative<bool>(value)) {
-            output << ", \"value\": " << get<bool>(value);
+        switch (instruction->opcode) {
+            case Opcode::Call: {
+                auto& function_name = get<std::string>(value);
+                output << ", \"name\": \"" << function_name << "\"";
+                output << ", \"id\": "
+                       << RUNTIME_LIBRARY.at(function_name).idNdx;
+            } break;
+            case Opcode::Identifier:
+                output << ", \"id\": \"" << get<std::string>(value) << "\"";
+                break;
+            case Opcode::Assign:
+                break;
+            default:
+                if (std::holds_alternative<double>(value)) {
+                    output << ", \"value\": " << get<double>(value);
+                } else if (std::holds_alternative<std::string>(value)) {
+                    output << ", \"value\": \""
+                           << escape_string(get<std::string>(value)) << "\"";
+                } else if (std::holds_alternative<bool>(value)) {
+                    output << ", \"value\": " << get<bool>(value);
+                }
+                break;
         }
 
         output << "}";
@@ -220,7 +235,7 @@ void Printer::visit_number(NumberLiteral& number) {
 
 void Printer::visit_string(StringLiteral& string) {
     visit_expression(string);
-    output << ", \"stringValue\": \"" << escape_string(string.value) << "\"}";
+    output << "}";
 }
 
 void Printer::visit_boolean(BooleanLiteral& boolean) {
