@@ -67,8 +67,6 @@ auto main(int argc, char** argv) -> int {
         driver.program->accept(checker);
     }
 
-    driver.program->messages.emplace_back("Completed compilation");
-
     if (!driver.program->any_errors()) {
         dgeval::ast::Fold folder;
         driver.program->accept(folder);
@@ -84,6 +82,7 @@ auto main(int argc, char** argv) -> int {
         }
     }
 
+    driver.program->messages.emplace_back("Completed compilation");
     driver.program->accept(printer);
 
     if (!driver.program->any_errors()) {
