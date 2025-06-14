@@ -35,14 +35,14 @@ class OptimizationFlags {
 
 class Window {
   public:
-    Window(Instruction* start, Instruction* end);
+    Window(Instruction* start, Instruction* end, int offset);
     auto ineffective_store_load() -> bool;
     auto constant_value_sink() -> bool;
     auto shift_at(size_t idx, int value) -> bool;
     auto shift(int value) -> bool;
     [[nodiscard]] auto last_idx() const -> size_t;
     [[nodiscard]] auto branches_end_with_literals() const -> bool;
-    auto remove_literals(int offset) -> int;
+    [[nodiscard]] auto remove_literals(int offset) const -> int;
 
     std::array<Instruction*, 3> inner;
     Instruction* end;

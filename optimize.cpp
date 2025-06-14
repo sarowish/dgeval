@@ -1,18 +1,22 @@
 #include "optimize.hpp"
 
+#include <algorithm>
+
 namespace dgeval::ast {
 
-Window::Window(Instruction* start, Instruction* end) :
+Window::Window(Instruction* start, Instruction* end, int offset) :
     inner({&start[0], &start[1], &start[2]}),
-    end(end) {}
+    end(end),
+    root(start - 1),
+    offset(offset) {}
 
 auto Window::ineffective_store_load() -> bool {
     if (inner[1]->opcode != Opcode::Pop) {
         return false;
     }
 
-    auto const first = inner[0];
-    auto const third = inner[2];
+    auto* const first = inner[0];
+    auto* const third = inner[2];
 
     if (first->opcode == Opcode::Assign && third->opcode == Opcode::Identifier
         && first->parameter == third->parameter) {
@@ -95,7 +99,7 @@ void Peephole::apply_removal() {
     auto removal = std::remove_if(
         instructions.begin(),
         instructions.end(),
-        [](Instruction inst) { return inst.opcode == Opcode::None; }
+        [](Instruction const& inst) { return inst.opcode == Opcode::None; }
     );
 
     instructions.erase(removal, instructions.end());
@@ -106,7 +110,7 @@ void Peephole::run() {
         return;
     }
 
-    Window window(instructions.begin().base(), instructions.end().base());
+    Window window(instructions.begin().base(), instructions.end().base(), 0);
     run_helper(window);
 
     apply_removal();
@@ -136,7 +140,7 @@ void Peephole::run() {
     return true;
 }
 
-auto Window::remove_literals(int offset) -> int {
+auto Window::remove_literals(int offset) const -> int {
     int true_offset = 0;
     int false_offset = 0;
 
@@ -170,18 +174,18 @@ void Peephole::run_helper(Window& window) {
         if (window.inner[0]->opcode == Opcode::JumpFalse) {
             // this is so cursed
 
-            auto jmp = &instructions[window.inner[0]->parameter - 1];
-            auto continuation = &instructions[jmp->parameter];
+            auto* jmp = &instructions[window.inner[0]->parameter - 1];
+            auto* continuation = &instructions[jmp->parameter];
 
-            window.true_branch = std::make_unique<Window>(window.inner[1], jmp);
-            window.true_branch->root = window.inner[0];
-            window.true_branch->offset = window.offset;
+            window.true_branch =
+                std::make_unique<Window>(window.inner[1], jmp, window.offset);
             run_helper(*window.true_branch);
 
-            window.false_branch =
-                std::make_unique<Window>(jmp + 1, continuation);
-            window.false_branch->root = jmp;
-            window.false_branch->offset = window.true_branch->offset;
+            window.false_branch = std::make_unique<Window>(
+                jmp + 1,
+                continuation,
+                window.true_branch->offset
+            );
             run_helper(*window.false_branch);
 
             window.offset = window.false_branch->offset;

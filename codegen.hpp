@@ -28,7 +28,7 @@ class Codegen {
     void emit_bytes(std::initializer_list<uint8_t> bytes);
     template<typename T>
     void emit_code_fragment(T code_fragment);
-    auto create_code_base() -> void*;
+    [[nodiscard]] auto create_code_base() const -> void*;
     void emit_prologue(int variable_count);
     void emit_epilogue();
     void xmm_arith_instruction(uint8_t critical_byte);
@@ -42,12 +42,12 @@ class Codegen {
     void translate_function_call(Instruction& instruction);
     void translate_lrt(Instruction& instruction);
     void translate_instruction(Instruction& instruction);
-    void backpatch_instructions(std::vector<Instruction>& instructions);
+    void backpatch_instructions(std::vector<Instruction>& instructions) const;
     auto generate(Program& program) -> DynamicFunction*;
 
     lib::Runtime runtime;
     static std::array<Register, 4> registers;
-    uint8_t* code_base {(uint8_t*)malloc(DELTA)};
+    uint8_t* code_base {std::bit_cast<uint8_t*>(malloc(DELTA))};
     size_t bag_size {DELTA};
     size_t code_len {0};
     size_t unwind_location;

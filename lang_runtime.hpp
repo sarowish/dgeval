@@ -28,14 +28,14 @@ class ArrayType: public Array {
   public:
     ArrayType(TypeDescriptor type) : Array(type), inner(new std::vector<T>) {}
 
-    ~ArrayType() {
+    ~ArrayType() override {
         delete inner;
     }
 
     [[nodiscard]] virtual auto elements_equal(T p1, T p2) const -> bool = 0;
 
-    virtual auto _equals_to(Array* other) -> bool {
-        return equals_to((ArrayType<T>*)other);
+    auto _equals_to(Array* other) -> bool override {
+        return equals_to(dynamic_cast<ArrayType<T>*>(other));
     }
 
     [[nodiscard]] virtual auto equals_to(ArrayType<T>* other) const -> bool {
@@ -64,8 +64,8 @@ class ArrayString: public ArrayType<std::string*> {
 
     ArrayString(std::string** base, int count);
 
-    [[nodiscard]] virtual auto
-    elements_equal(std::string* p1, std::string* p2) const -> bool override;
+    [[nodiscard]] auto elements_equal(std::string* p1, std::string* p2) const
+        -> bool override;
 };
 
 class ArrayDouble: public ArrayType<double> {
@@ -74,7 +74,7 @@ class ArrayDouble: public ArrayType<double> {
 
     ArrayDouble(double* base, int count);
 
-    [[nodiscard]] virtual auto elements_equal(double p1, double p2) const
+    [[nodiscard]] auto elements_equal(double p1, double p2) const
         -> bool override;
 
     auto stddev() -> double;
@@ -90,8 +90,7 @@ class ArrayBool: public ArrayType<bool> {
 
     ArrayBool(int64_t* base, int count);
 
-    [[nodiscard]] virtual auto elements_equal(bool p1, bool p2) const
-        -> bool override;
+    [[nodiscard]] auto elements_equal(bool p1, bool p2) const -> bool override;
 };
 
 class ArrayArray: public ArrayType<ArrayArray*> {
@@ -100,8 +99,8 @@ class ArrayArray: public ArrayType<ArrayArray*> {
 
     ArrayArray(TypeDescriptor type, ArrayArray** base, int count);
 
-    [[nodiscard]] virtual auto
-    elements_equal(ArrayArray* p1, ArrayArray* p2) const -> bool override;
+    [[nodiscard]] auto elements_equal(ArrayArray* p1, ArrayArray* p2) const
+        -> bool override;
 };
 
 class Runtime {

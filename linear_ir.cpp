@@ -54,7 +54,7 @@ void LinearIR::visit_array(ArrayLiteral& array) {
     switch_context(*array.items, true);
 
     instructions.emplace_back(array);
-    instructions.back().value = (double)array.item_count;
+    instructions.back().value = static_cast<double>(array.item_count);
 }
 
 void LinearIR::visit_identifier(Identifier& identifier) {
@@ -134,7 +134,7 @@ void LinearIR::visit_binary_expression(BinaryExpression& binary_expr) {
         case Opcode::CallLRT: {
             auto& value = instructions.back().value;
             if (binary_expr.idNdx == 6 || binary_expr.idNdx == 7) {
-                value = (double)binary_expr.stack_load;
+                value = static_cast<double>(binary_expr.stack_load);
             } else if (std::holds_alternative<std::monostate>(value)) {
                 value = 0.0;
             }

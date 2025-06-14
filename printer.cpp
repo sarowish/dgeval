@@ -66,7 +66,7 @@ void print_ic(
         if (std::holds_alternative<double>(value)) {
             output << get<double>(value);
         } else if (std::holds_alternative<std::string>(value)) {
-            auto& str = get<std::string>(value);
+            auto const& str = get<std::string>(value);
             output << '"' << escape_string(str) << '"';
             if (instruction.opcode == Opcode::Call) {
                 output << " @" << RUNTIME_LIBRARY.at(str).idNdx;
@@ -89,15 +89,16 @@ void Printer::visit_program(Program& program) {
 
     std::vector<std::pair<std::string, SymbolDescriptor>> sorted_symbols;
 
+    sorted_symbols.reserve(symbols.size());
     for (auto& entry : symbols) {
-        sorted_symbols.push_back(entry);
+        sorted_symbols.emplace_back(entry);
     }
 
     std::sort(
         sorted_symbols.begin(),
         sorted_symbols.end(),
-        [&](std::pair<std::string, SymbolDescriptor> a,
-            std::pair<std::string, SymbolDescriptor> b) {
+        [](std::pair<std::string, SymbolDescriptor> const& a,
+           std::pair<std::string, SymbolDescriptor> const& b) {
             return a.second.idx < b.second.idx;
             ;
         }
@@ -134,7 +135,7 @@ void Printer::visit_program(Program& program) {
 
         switch (instruction->opcode) {
             case Opcode::Call: {
-                auto& function_name = get<std::string>(value);
+                auto const& function_name = get<std::string>(value);
                 output << ", \"name\": \"" << function_name << "\"";
                 output << ", \"id\": "
                        << RUNTIME_LIBRARY.at(function_name).idNdx;

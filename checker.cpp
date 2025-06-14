@@ -79,7 +79,7 @@ void Checker::visit_identifier(Identifier& identifier) {
         }
     } else if (RUNTIME_LIBRARY.contains(identifier.id)) {
         if (opcode == Opcode::Call) {
-            auto& function_signature = RUNTIME_LIBRARY.at(identifier.id);
+            auto const& function_signature = RUNTIME_LIBRARY.at(identifier.id);
             identifier.type_desc = function_signature.return_type;
             identifier.idNdx = function_signature.idNdx;
         } else if (opcode != Opcode::Assign) {

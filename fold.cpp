@@ -38,12 +38,13 @@ auto Fold::visit_wait_statement(WaitStatement& statement)
     return nullptr;
 }
 
-auto Fold::visit_expression(Expression& expression)
+auto Fold::visit_expression(Expression& /*expression*/)
     -> std::unique_ptr<Expression> {
     return nullptr;
 }
 
-auto Fold::visit_number(NumberLiteral& number) -> std::unique_ptr<Expression> {
+auto Fold::visit_number(NumberLiteral& /*number*/)
+    -> std::unique_ptr<Expression> {
     return nullptr;
 }
 
@@ -53,7 +54,7 @@ auto Fold::visit_string(StringLiteral& string) -> std::unique_ptr<Expression> {
     return nullptr;
 }
 
-auto Fold::visit_boolean(BooleanLiteral& boolean)
+auto Fold::visit_boolean(BooleanLiteral& /*boolean*/)
     -> std::unique_ptr<Expression> {
     return nullptr;
 }
@@ -69,7 +70,7 @@ auto Fold::visit_array(ArrayLiteral& array) -> std::unique_ptr<Expression> {
     return nullptr;
 }
 
-auto Fold::visit_identifier(Identifier& identifier)
+auto Fold::visit_identifier(Identifier& /*identifier*/)
     -> std::unique_ptr<Expression> {
     return nullptr;
 }

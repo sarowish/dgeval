@@ -25,7 +25,7 @@ auto main(int argc, char** argv) -> int {
             return 1;
         }
 
-        int parameter;
+        int parameter {};
         auto result = std::from_chars(
             flag.data() + 2,
             flag.data() + flag.size(),

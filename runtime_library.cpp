@@ -1,5 +1,5 @@
 #include "runtime_library.hpp"
-#include <math.h>
+#include <cmath>
 #include <iostream>
 #include <random>
 #include "lang_runtime.hpp"
@@ -79,7 +79,7 @@ auto len(std::string& str) -> double {
 }
 
 auto right(Runtime* runtime, std::string& str, double n) -> std::string* {
-    std::string* new_str = new std::string(str.substr(str.length() - n));
+    auto* new_str = new std::string(str.substr(str.length() - n));
 
     runtime->register_string_object(new_str);
 
@@ -87,7 +87,7 @@ auto right(Runtime* runtime, std::string& str, double n) -> std::string* {
 }
 
 auto left(Runtime* runtime, std::string& str, double n) -> std::string* {
-    std::string* new_str = new std::string(str.substr(0, n));
+    auto* new_str = new std::string(str.substr(0, n));
 
     runtime->register_string_object(new_str);
 

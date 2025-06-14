@@ -68,18 +68,18 @@ class TypeDescriptor {
         return type != other.type || dimension != other.dimension;
     }
 
-    auto is_array() const -> bool {
+    [[nodiscard]] auto is_array() const -> bool {
         return dimension != 0;
     }
 
-    auto item_type() const -> TypeDescriptor {
+    [[nodiscard]] auto item_type() const -> TypeDescriptor {
         TypeDescriptor type = *this;
         --type.dimension;
 
         return type;
     }
 
-    auto to_string() const -> std::string {
+    [[nodiscard]] auto to_string() const -> std::string {
         auto s = TYPE_STR[std::to_underlying(type)];
         if (dimension != 0) {
             return "(" + s + "," + " " + std::to_string(dimension) + ")";
@@ -148,7 +148,7 @@ class Expression {
     virtual auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
         -> std::unique_ptr<Expression> = 0;
 
-    auto is_effective() -> bool {
+    [[nodiscard]] auto is_effective() const -> bool {
         return function_call_count || assignment_count;
     }
 
@@ -176,7 +176,7 @@ class NumberLiteral: public Expression {
         visitor.visit_number(*this);
     }
 
-    virtual auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
+    auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
         -> std::unique_ptr<Expression> override {
         return visitor.visit_number(*this);
     }
@@ -194,7 +194,7 @@ class StringLiteral: public Expression {
         visitor.visit_string(*this);
     }
 
-    virtual auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
+    auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
         -> std::unique_ptr<Expression> override {
         return visitor.visit_string(*this);
     }
@@ -212,7 +212,7 @@ class BooleanLiteral: public Expression {
         visitor.visit_boolean(*this);
     }
 
-    virtual auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
+    auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
         -> std::unique_ptr<Expression> override {
         return visitor.visit_boolean(*this);
     }
@@ -230,7 +230,7 @@ class ArrayLiteral: public Expression {
         visitor.visit_array(*this);
     }
 
-    virtual auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
+    auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
         -> std::unique_ptr<Expression> override {
         return visitor.visit_array(*this);
     }
@@ -249,7 +249,7 @@ class Identifier: public Expression {
         visitor.visit_identifier(*this);
     }
 
-    virtual auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
+    auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
         -> std::unique_ptr<Expression> override {
         return visitor.visit_identifier(*this);
     }
@@ -273,7 +273,7 @@ class BinaryExpression: public Expression {
         visitor.visit_binary_expression(*this);
     }
 
-    virtual auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
+    auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
         -> std::unique_ptr<Expression> override {
         return visitor.visit_binary_expression(*this);
     }
@@ -296,7 +296,7 @@ class UnaryExpression: public Expression {
         visitor.visit_unary_expression(*this);
     }
 
-    virtual auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
+    auto accept(Visitor<std::unique_ptr<Expression>>& visitor)
         -> std::unique_ptr<Expression> override {
         return visitor.visit_unary_expression(*this);
     }

@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <optional>
-#include <ranges>
 #include <unordered_map>
 #include "ast.hpp"
 #include "linear_ir.hpp"
@@ -67,7 +66,7 @@ class Program {
         return std::count_if(
                    messages.begin(),
                    messages.end(),
-                   [&](Message mes) {
+                   [](Message const& mes) {
                        return mes.severity == MessageSeverity::Error;
                    }
                )
