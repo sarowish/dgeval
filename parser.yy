@@ -68,7 +68,7 @@
 
 %left ","
 %right "="
-%nonassoc "?" ":"
+%right "?" ":"
 %left "&&" "||"
 %left "==" "!=" "<" ">" "<=" ">="
 %left "+" "-"
