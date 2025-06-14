@@ -50,15 +50,16 @@ auto Window::constant_value_sink() -> bool {
 
 auto Window::shift_at(size_t idx, int value) -> bool {
     auto& inst = inner[idx];
+    bool shift_forward = value >= 0;
 
-    if (inst == end) {
+    if (inst == end && shift_forward) {
         return true;
     }
 
     inst += value;
 
     while (inst != end && inst->opcode == Opcode::None) {
-        inst += 1;
+        inst += shift_forward ? 1 : -1;
     }
 
     return inst == end;
@@ -196,8 +197,8 @@ void Peephole::run_helper(Window& window) {
                 }
             }
 
-            window.inner[0]->parameter -= window.false_branch->offset;
-            jmp->parameter -= window.true_branch->offset;
+            window.inner[0]->parameter -= window.true_branch->offset;
+            jmp->parameter -= window.false_branch->offset;
             window.inner[0] = continuation;
             window.inner[1] = continuation + 1;
             window.inner[2] = continuation + 2;
@@ -218,7 +219,10 @@ void Peephole::run_helper(Window& window) {
         }
 
         if (window.shift(1)) {
-            window.constant_value_sink();
+            if (window.constant_value_sink()) {
+                window.shift_at(0, -1);
+                window.end = window.inner[1];
+            }
             break;
         }
     }
