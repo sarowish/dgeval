@@ -75,6 +75,8 @@ loc.step();
   \"            { yy_pop_state(); return Parser::make_STRING(driver.buffer, loc); }
   [^\"\\\n]+    driver.buffer += yytext;
   \\n           driver.buffer += '\n';
+  \\t           driver.buffer += '\t';
+  \\r           driver.buffer += '\r';
   \\\\          driver.buffer += '\\';
   \\\"          driver.buffer += '\"';
   {hex_escape}  driver.buffer += strtol(yytext + 2, NULL, 16);
