@@ -54,7 +54,7 @@ scanner.cpp: scanner.ll scanner.hpp
 	flex -o $@ $<
 
 clean:
-	rm $(OBJ) scanner.cpp parser.{cpp,hpp} project4
+	rm $(OBJ) scanner.cpp parser.{cpp,hpp} location.hpp project4
 
 clean_output:
 	rm *.json
