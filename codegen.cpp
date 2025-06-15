@@ -304,12 +304,16 @@ void Codegen::translate_lrt(Instruction& instruction) {
             emit_call(reinterpret_cast<void*>(lib::Runtime::strcmp));
             place_result_on_stack(false);
         } break;
-        case 7: {
+        case 7:
             setup_argument(1, false);
             setup_argument(0, false);
             emit_call(reinterpret_cast<void*>(lib::Runtime::arrcmp));
             place_result_on_stack(false);
-        } break;
+            break;
+        case 8:
+            setup_immediate_integral_arg(0, std::bit_cast<uint64_t>(&runtime));
+            emit_call(reinterpret_cast<void*>(lib::Runtime::post_exec_cleanup));
+            break;
         default:
             break;
     }
