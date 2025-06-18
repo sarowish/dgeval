@@ -162,7 +162,7 @@ auto Fold::visit_unary_expression(UnaryExpression& unary_expr)
         case Opcode::Not:
             if (auto const& boolean =
                     dynamic_cast<BooleanLiteral*>(unary_expr.left.get())) {
-                return std::make_unique<NumberLiteral>(
+                return std::make_unique<BooleanLiteral>(
                     unary_expr.loc,
                     !boolean->value
                 );
