@@ -1,4 +1,5 @@
 #include "runtime_library.hpp"
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <random>
@@ -79,7 +80,10 @@ auto len(std::string& str) -> double {
 }
 
 auto right(Runtime* runtime, std::string& str, double n) -> std::string* {
-    auto* new_str = new std::string(str.substr(str.length() - n));
+    auto length = str.length();
+    n = std::min<double>(std::max<double>(n, 0), length);
+
+    auto* new_str = new std::string(str.substr(length - n));
 
     runtime->register_string_object(new_str);
 
