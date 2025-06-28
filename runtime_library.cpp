@@ -1,7 +1,7 @@
 #include "runtime_library.hpp"
 #include <algorithm>
 #include <cmath>
-#include <iostream>
+#include <print>
 #include <random>
 #include "lang_runtime.hpp"
 
@@ -28,7 +28,7 @@ auto max(ArrayDouble* array) -> double {
 }
 
 auto print(std::string& str) -> double {
-    std::cout << str;
+    std::print("{}", str);
     return str.length();
 }
 

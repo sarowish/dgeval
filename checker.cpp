@@ -1,5 +1,5 @@
 #include "checker.hpp"
-#include <string>
+#include <format>
 #include "ast.hpp"
 
 namespace dgeval::ast {
@@ -36,7 +36,7 @@ void Checker::visit_wait_statement(WaitStatement& statement) {
         if (!symbol_table.contains(id)) {
             errors.emplace_back(
                 statement.line_number,
-                "The symbol `" + id + "` is not defined"
+                std::format("The symbol `{}` is not defined", id)
             );
         }
     }
@@ -91,7 +91,7 @@ void Checker::visit_identifier(Identifier& identifier) {
     } else {
         errors.emplace_back(
             identifier.loc,
-            "The variable `" + identifier.id + "` is not defined"
+            std::format("The variable `{}` is not defined", identifier.id)
         );
     }
 }
@@ -131,13 +131,18 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                 if (RUNTIME_LIBRARY.contains(id)) {
                     errors.emplace_back(
                         binary_expr.loc,
-                        "Cannot redefine runtime library function name `" + id
-                            + "` as a variable name"
+                        std::format(
+                            "Cannot redefine runtime library function name `{}` as a variable name",
+                            id
+                        )
                     );
                 } else if (symbol_table[id].type_desc != NONE) {
                     errors.emplace_back(
                         binary_expr.loc,
-                        "The variable `" + id + "` has already been defined"
+                        std::format(
+                            "The variable `{}` has already been defined",
+                            id
+                        )
                     );
                 } else {
                     binary_expr.type_desc = right->type_desc;
@@ -190,10 +195,10 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
             if (left->type_desc != NUMBER || right->type_desc != NUMBER) {
                 errors.emplace_back(
                     binary_expr.loc,
-                    "Operator `"
-                        + OPERATOR_SYMBOLS[std::to_underlying(binary_expr
-                                                                  .opcode)]
-                        + "` requires its operands to be of type `number`"
+                    std::format(
+                        "Operator `{}` requires its operands to be of the type `number`",
+                        OPERATOR_SYMBOLS[std::to_underlying(binary_expr.opcode)]
+                    )
                 );
             } else {
                 binary_expr.type_desc = NUMBER;
@@ -220,8 +225,11 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
             } else {
                 errors.emplace_back(
                     binary_expr.loc,
-                    "Cannot add `" + right->type_desc.to_string() + "` to `"
-                        + left->type_desc.to_string() + "`"
+                    std::format(
+                        "Cannot add `{}` to `{}`",
+                        right->type_desc.to_string(),
+                        left->type_desc.to_string()
+                    )
                 );
             }
             break;
@@ -232,20 +240,20 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
             if (left->type_desc.is_array() || left->type_desc == BOOLEAN) {
                 errors.emplace_back(
                     binary_expr.loc,
-                    "Operator `"
-                        + OPERATOR_SYMBOLS[std::to_underlying(binary_expr
-                                                                  .opcode)]
-                        + "` is not supported for `"
-                        + left->type_desc.to_string() + "`"
+                    std::format(
+                        "Operator `{}` is not supported for `{}`",
+                        OPERATOR_SYMBOLS[std::to_underlying(binary_expr
+                                                                .opcode)],
+                        left->type_desc.to_string()
+                    )
                 );
             } else if (left->type_desc != right->type_desc) {
                 errors.emplace_back(
                     binary_expr.loc,
-                    "Operator `"
-                        + OPERATOR_SYMBOLS[std::to_underlying(binary_expr
-                                                                  .opcode)]
-                        + "` requires its operands to be of the same type"
-
+                    std::format(
+                        "Operator `{}` requires its operands to be of the same type",
+                        OPERATOR_SYMBOLS[std::to_underlying(binary_expr.opcode)]
+                    )
                 );
             } else {
                 binary_expr.type_desc = BOOLEAN;
@@ -256,11 +264,10 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
             if (left->type_desc != right->type_desc) {
                 errors.emplace_back(
                     binary_expr.loc,
-                    "Operator `"
-                        + OPERATOR_SYMBOLS[std::to_underlying(binary_expr
-                                                                  .opcode)]
-                        + "` requires its operands to be of the same type"
-
+                    std::format(
+                        "Operator `{}` requires its operands to be of the same type",
+                        OPERATOR_SYMBOLS[std::to_underlying(binary_expr.opcode)]
+                    )
                 );
             } else {
                 binary_expr.type_desc = BOOLEAN;
@@ -310,9 +317,11 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                 if (function_signature.parameter_count != argument_count) {
                     errors.emplace_back(
                         binary_expr.loc,
-                        "Mismatch in function argument count: expected "
-                            + std::to_string(function_signature.parameter_count)
-                            + ", received " + std::to_string(argument_count)
+                        std::format(
+                            "Mismatch in function argument count: expected {}, received {}",
+                            function_signature.parameter_count,
+                            argument_count
+                        )
                     );
                 }
                 for (size_t idx = 0; idx
@@ -325,10 +334,12 @@ void Checker::visit_binary_expression(BinaryExpression& binary_expr) {
                     if (argument != parameter && argument != NONE) {
                         errors.emplace_back(
                             binary_expr.loc,
-                            "Type mismatch in function argument position "
-                                + std::to_string(idx + 1) + ": expected `"
-                                + parameter.to_string() + "`, received `"
-                                + argument.to_string() + "`"
+                            std::format(
+                                "Type mismatch in function argument position {}: expected `{}`, received `{}`",
+                                idx + 1,
+                                parameter.to_string(),
+                                argument.to_string()
+                            )
                         );
                     }
                 }

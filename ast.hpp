@@ -82,7 +82,7 @@ class TypeDescriptor {
     [[nodiscard]] auto to_string() const -> std::string {
         auto s = TYPE_STR[std::to_underlying(type)];
         if (dimension != 0) {
-            return "(" + s + "," + " " + std::to_string(dimension) + ")";
+            return std::format("({}, {})", s, dimension);
         }
         return s;
     }

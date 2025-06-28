@@ -1,14 +1,14 @@
 #include "printer.hpp"
-#include <iomanip>
+#include <print>
 #include "ast.hpp"
 
 namespace dgeval::ast {
 
 void join_strings(std::ofstream& output, std::vector<std::string>& strings) {
     for (auto str = strings.begin(); str != strings.end();) {
-        output << "\"" << *str << "\"";
+        std::print(output, R"("{}")", *str);
         if (++str != strings.end()) {
-            output << ", ";
+            std::print(output, ", ");
         }
     }
 }
@@ -53,34 +53,37 @@ void print_ic(
 
     for (int idx = 0; idx < instructions.size(); ++idx) {
         auto const& instruction = instructions[idx];
-        output << std::setfill('0') << std::setw(5) << idx << ' '
-               << std::setfill(' ') << std::setw(6) << std::left
-               << MNEMONICS[std::to_underlying(instruction.opcode)]
-               << std::setw(5) << std::right << instruction.parameter
-               << " type:["
-               << TYPE_STR[std::to_underlying(instruction.type.type)] << ':'
-               << instruction.type.dimension << "] ";
+
+        std::print(
+            output,
+            "{:05} {:6}{:5} type:[{}:{}] ",
+            idx,
+            MNEMONICS[std::to_underlying(instruction.opcode)],
+            instruction.parameter,
+            TYPE_STR[std::to_underlying(instruction.type.type)],
+            instruction.type.dimension
+        );
 
         auto const& value = instruction.value;
 
         if (std::holds_alternative<double>(value)) {
-            output << get<double>(value);
+            std::print(output, "{}", get<double>(value));
         } else if (std::holds_alternative<std::string>(value)) {
             auto const& str = get<std::string>(value);
-            output << '"' << escape_string(str) << '"';
+            std::print(output, R"("{}")", escape_string(str));
             if (instruction.opcode == Opcode::Call) {
-                output << " @" << RUNTIME_LIBRARY.at(str).idNdx;
+                std::print(output, " @{}", RUNTIME_LIBRARY.at(str).idNdx);
             }
         } else if (std::holds_alternative<bool>(value)) {
-            output << get<bool>(value);
+            std::print(output, "{}", get<bool>(value));
         }
 
-        output << std::endl;
+        std::println(output);
     }
 }
 
 void Printer::visit_program(Program& program) {
-    output << "{\"circularStatements\": ";
+    std::print(output, R"({{"circularStatements": )");
     program.circular_statements->accept(*this);
 
     auto& symbols = program.symbol_table;
@@ -104,174 +107,204 @@ void Printer::visit_program(Program& program) {
         }
     );
 
-    output << ", \"symbols\": [";
+    std::print(output, R"(, "symbols": [)");
     for (auto symbol = sorted_symbols.begin();
          symbol != sorted_symbols.end();) {
         const int type = std::to_underlying(symbol->second.type_desc.type);
-        output << "{\"name\": \"" << symbol->first << "\"," << "\"type\": \""
-               << TYPE_STR[type] << "\","
-               << "\"dim\": " << symbol->second.type_desc.dimension << "}";
+        std::print(
+            output,
+            R"({{"name": "{}", "type": "{}", "dim": {}}})",
+            symbol->first,
+            TYPE_STR[type],
+            symbol->second.type_desc.dimension
+        );
 
         if (++symbol != sorted_symbols.end()) {
-            output << ", ";
+            std::print(output, ", ");
         }
     }
 
-    output << "], \"executablestatements\": ";
+    std::print(output, R"(], "executablestatements": )");
     program.statements->accept(*this);
 
-    output << ", \"ic\": [";
+    std::print(output, R"(, "ic": [)");
     for (auto instruction = instructions.begin();
          instruction != instructions.end();) {
         int const opcode = std::to_underlying(instruction->opcode);
         int const type = std::to_underlying(instruction->type.type);
 
-        output << "{\"mnemonic\": \"" << MNEMONICS[opcode]
-               << "\", \"opCode\": " << opcode << ", \"type\": " << type
-               << ", \"p1\": " << instruction->parameter
-               << ", \"dim\": " << instruction->type.dimension;
+        std::print(
+            output,
+            R"({{"mnemonic": "{}", "opCode": {}, "type": {}, "p1": {}, "dim": {})",
+            MNEMONICS[opcode],
+            opcode,
+            type,
+            instruction->parameter,
+            instruction->type.dimension
+        );
 
         auto const& value = instruction->value;
 
         switch (instruction->opcode) {
             case Opcode::Call: {
                 auto const& function_name = get<std::string>(value);
-                output << ", \"name\": \"" << function_name << "\"";
-                output << ", \"id\": "
-                       << RUNTIME_LIBRARY.at(function_name).idNdx;
+                std::print(
+                    output,
+                    R"(, "name": "{}", "id": {})",
+                    function_name,
+                    RUNTIME_LIBRARY.at(function_name).idNdx
+                );
             } break;
             case Opcode::Identifier:
-                output << ", \"id\": \"" << get<std::string>(value) << "\"";
+                std::print(output, R"(, "id": "{}")", get<std::string>(value));
                 break;
             case Opcode::Assign:
                 break;
             default:
                 if (std::holds_alternative<double>(value)) {
-                    output << ", \"value\": " << get<double>(value);
+                    std::print(output, R"(, "value": {})", get<double>(value));
                 } else if (std::holds_alternative<std::string>(value)) {
-                    output << ", \"value\": \""
-                           << escape_string(get<std::string>(value)) << "\"";
+                    std::print(
+                        output,
+                        R"(, "value": "{}")",
+                        escape_string(get<std::string>(value))
+                    );
                 } else if (std::holds_alternative<bool>(value)) {
-                    output << ", \"value\": " << get<bool>(value);
+                    std::print(output, R"(, "value": {})", get<bool>(value));
                 }
                 break;
         }
 
-        output << "}";
+        std::print(output, "}}");
 
         if (++instruction != instructions.end()) {
-            output << ", ";
+            std::print(output, ", ");
         }
     }
 
     program.sort_messages();
-    output << "], \"messages\": [";
+    std::print(output, R"(], "messages": [)");
     for (auto msg = messages.begin(); msg != messages.end();) {
-        output << "\"";
+        std::print(output, "\"");
         if (msg->loc.has_value()) {
-            output << "Line Number " << msg->loc->begin.line << " ";
-            std::cout << "Line Number " << msg->loc->begin.line << " ";
+            std::print(output, "Line Number {} ", msg->loc->begin.line);
+            std::print("Line Number {} ", msg->loc->begin.line);
         }
 
-        output << "[" << SEVERITY_STR[std::to_underlying(msg->severity)]
-               << "]: " << msg->text << ".\"";
+        std::print(
+            output,
+            R"([{}]: {}.")",
+            SEVERITY_STR[std::to_underlying(msg->severity)],
+            msg->text
+        );
 
-        std::cout << "[" << SEVERITY_STR[std::to_underlying(msg->severity)]
-                  << "]: " << msg->text << "." << std::endl;
+        std::println(
+            "[{}]: {}.",
+            SEVERITY_STR[std::to_underlying(msg->severity)],
+            msg->text
+        );
 
         if (++msg != messages.end()) {
-            output << ", ";
+            std::print(output, ", ");
         }
     }
-    output << "]}";
+    std::print(output, "]}}");
 }
 
 void Printer::visit_statement_list(StatementList& statements) {
-    output << "[";
+    std::print(output, "[");
     for (auto statement = statements.inner.begin();
          statement != statements.inner.end();) {
         (*statement)->accept(*this);
         if (++statement != statements.inner.end()) {
-            output << ", ";
+            std::print(output, ", ");
         }
     }
-    output << "]";
+    std::print(output, "]");
 }
 
 void Printer::visit_expression_statement(ExpressionStatement& statement) {
-    output << "{\"lineNumber\": " << statement.line_number << ", "
-           << "\"nodeType\": \"expression statement\", "
-           << "\"expression\": ";
+    std::print(
+        output,
+        R"({{"lineNumber": {}, "nodeType": "expression statement", "expression": )",
+        statement.line_number
+    );
     statement.expression->accept(*this);
-    output << "}";
+    std::print(output, "}}");
 }
 
 void Printer::visit_wait_statement(WaitStatement& statement) {
-    output << "{\"lineNumber\": " << statement.line_number << ", "
-           << "\"nodeType\": \"wait statement\", "
-           << "\"expression\": ";
+    std::print(
+        output,
+        R"({{"lineNumber": {}, "nodeType": "wait statement", "expression": )",
+        statement.line_number
+    );
     statement.expression->accept(*this);
-    output << ", \"idList\": [";
+    std::print(output, R"(, "idList": [)");
     join_strings(output, statement.id_list);
-    output << "]}";
+    std::print(output, "]}}");
 }
 
 void Printer::visit_expression(Expression& expression) {
     int const opcode = std::to_underlying(expression.opcode);
     int const type = std::to_underlying(expression.type_desc.type);
 
-    output << "{\"lineNumber\": " << expression.loc.begin.line
-           << ", \"nodeType\": \"expression node\""
-           << ", \"opCode\": " << opcode << ", \"mnemonic\": \""
-           << MNEMONICS[opcode] << "\", \"typeCode\": " << type
-           << ", \"type\": \"" << TYPE_STR[type]
-           << "\", \"dim\": " << expression.type_desc.dimension
-           << ", \"idNdx\": " << expression.idNdx;
+    std::print(
+        output,
+        R"({{"lineNumber": {}, "nodeType": "expression node", "opCode": {}, "mnemonic": "{}", "typeCode": {}, "type": "{}", "dim": {}, "idNdx": {})",
+        expression.loc.begin.line,
+        opcode,
+        MNEMONICS[opcode],
+        type,
+        TYPE_STR[type],
+        expression.type_desc.dimension,
+        expression.idNdx
+    );
 }
 
 void Printer::visit_number(NumberLiteral& number) {
     visit_expression(number);
-    output << ", \"numberValue\": \"" << number.value << "\"}";
+    std::print(output, R"(, "numberValue": "{}"}})", number.value);
 }
 
 void Printer::visit_string(StringLiteral& string) {
     visit_expression(string);
-    output << "}";
+    std::print(output, "}}");
 }
 
 void Printer::visit_boolean(BooleanLiteral& boolean) {
     visit_expression(boolean);
-    output << ", \"numberValue\": \"" << boolean.value << "\"}";
+    std::print(output, R"(, "numberValue": "{}"}})", boolean.value);
 }
 
 void Printer::visit_array(ArrayLiteral& array) {
     visit_expression(array);
-    output << ", \"left\": ";
+    std::print(output, R"(, "left": )");
     array.items->accept(*this);
-    output << "}";
+    std::print(output, "}}");
 }
 
 void Printer::visit_identifier(Identifier& identifier) {
     visit_expression(identifier);
-    output << ", \"id\": \"" << identifier.id << "\"}";
+    std::print(output, R"(, "id": "{}"}})", identifier.id);
 }
 
 void Printer::visit_binary_expression(BinaryExpression& binary_expr) {
     visit_expression(binary_expr);
-    output << ", \"left\": ";
+    std::print(output, R"(, "left": )");
     binary_expr.left->accept(*this);
     if (binary_expr.right) {
-        output << ", \"right\": ";
+        std::print(output, R"(, "right": )");
         binary_expr.right->accept(*this);
     }
-    output << "}";
+    std::print(output, "}}");
 }
 
 void Printer::visit_unary_expression(UnaryExpression& unary_expr) {
     visit_expression(unary_expr);
-    output << ", \"left\": ";
+    std::print(output, R"(, "left": )");
     unary_expr.left->accept(*this);
-    output << "}";
+    std::print(output, "}}");
 }
 
 } // namespace dgeval::ast

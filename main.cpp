@@ -1,4 +1,5 @@
 #include <charconv>
+#include <print>
 #include "checker.hpp"
 #include "codegen.hpp"
 #include "dependency.hpp"
@@ -9,10 +10,10 @@
 
 auto main(int argc, char** argv) -> int {
     if (argc != 2 && argc != 3) {
-        std::cout
-            << "Usage is " << argv[0]
-            << " <optional optimization parameter> <dgeval module file name"
-            << std::endl;
+        std::println(
+            "Usage is {} <optional optimization parameter> <dgeval module file name",
+            argv[0]
+        );
         return 1;
     }
 
@@ -22,7 +23,7 @@ auto main(int argc, char** argv) -> int {
         std::string flag = argv[1];
 
         if (flag.length() <= 2 || !flag.starts_with("-p")) {
-            std::cout << "Invalid optimization flag." << std::endl;
+            std::println("Invalid optimization flag.");
             return 1;
         }
 
@@ -34,15 +35,14 @@ auto main(int argc, char** argv) -> int {
         );
 
         if (result.ec != std::errc()) {
-            std::cout << "-p flag must be followed by a valid integer."
-                      << std::endl;
+            std::println("-p flag must be followed by a valid integer.");
             return 1;
         }
 
         if (parameter < 0 || parameter > 0b1111) {
-            std::cout
-                << "Invalid optimization value after -p. It must be between 0 and 15."
-                << std::endl;
+            std::println(
+                "Invalid optimization value after -p. It must be between 0 and 15."
+            );
             return 1;
         }
 
@@ -53,7 +53,7 @@ auto main(int argc, char** argv) -> int {
     std::ifstream input(file_name + ".txt");
 
     if (!input.is_open()) {
-        std::cout << "File not found!" << std::endl;
+        std::println("File not found!");
         return 1;
     }
 

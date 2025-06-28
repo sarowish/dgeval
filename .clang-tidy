@@ -104,7 +104,6 @@ Checks: '-*,
 
   -modernize-use-designated-initializers,
   -modernize-use-ranges,
-  -modernize-raw-string-literal,
 
   -performance-avoid-endl,
 '
