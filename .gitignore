@@ -1,8 +1,7 @@
 *.txt
 *.json
-*.o
-parser.cpp
-parser.hpp
-scanner.cpp
-location.hpp
-project4
+src/parser.cpp
+src/parser.hpp
+src/scanner.cpp
+src/location.hpp
+build/

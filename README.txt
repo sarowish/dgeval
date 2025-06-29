@@ -7,7 +7,7 @@ make
 ## Running the program
 
 ```
-./project4 [optimization_parameter] <input_file>
+build/project4 [optimization_parameter] <input_file>
 ```
 
 The variable that points to the dynamically generated x64 code is named `func`
