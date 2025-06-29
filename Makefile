@@ -33,6 +33,6 @@ clean:
 	rm -r $(BUILD_DIR) $(SRC_DIR)/{scanner.cpp,parser.{cpp,hpp},location.hpp}
 
 clean_output:
-	rm *.json
+	rm *.json *-IC.txt
 
 -include $(OBJ:.o=.d)
