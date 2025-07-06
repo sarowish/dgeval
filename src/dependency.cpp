@@ -33,14 +33,6 @@ void Dependency::visit_program(Program& program) {
             if (statement && in_degree[idx] == 0) {
                 sorted.push_back(std::move(statement));
 
-                for (auto const& [symbol, rel] : symbols) {
-                    for (auto defining : rel.defines) {
-                        if (idx == defining) {
-                            program.symbol_table[symbol] = {NONE, idNdx++};
-                        }
-                    }
-                }
-
                 if (!relations[idx].empty()) {
                     done = false;
                 }
@@ -48,6 +40,14 @@ void Dependency::visit_program(Program& program) {
                 for (auto const& idx : relations[idx]) {
                     --in_degree[idx];
                 }
+            }
+        }
+    }
+
+    for (auto const& [symbol, rel] : symbols) {
+        for (auto defining : rel.defines) {
+            if (!statements->inner[defining]) {
+                program.symbol_table[symbol] = {NONE, idNdx++};
             }
         }
     }
