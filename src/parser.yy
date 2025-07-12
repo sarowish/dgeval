@@ -88,12 +88,12 @@ statement : expression_statement
           | wait_statement
           ;
 
-expression_statement : expression ";"         { $$ = std::make_unique<ast::ExpressionStatement>(@1, $1); } ;
+expression_statement : expression ";"                           { $$ = std::make_unique<ast::ExpressionStatement>(@1, $1); } ;
 
-wait_statement : "wait" identifier_list "then" expression ";"          { $$ = std::make_unique<ast::WaitStatement>(@1, $2, $4); } ;
+wait_statement : "wait" identifier_list "then" expression ";"   { $$ = std::make_unique<ast::WaitStatement>(@1, $2, $4); } ;
 
-identifier_list : IDENTIFIER                        { $$ = std::vector<std::string>(); $$.push_back($1); }
-                | identifier_list "," IDENTIFIER    { $$ = $1; $$.push_back($3); }
+identifier_list : IDENTIFIER                                    { $$ = std::vector<std::string>(); $$.push_back($1); }
+                | identifier_list "," IDENTIFIER                { $$ = $1; $$.push_back($3); }
                 ;
 
 expression : literal
@@ -114,7 +114,7 @@ literal : STRING                        { $$ = std::make_unique<ast::StringLiter
         | IDENTIFIER                    { $$ = std::make_unique<ast::Identifier>(@1, $1); }
         | "true"                        { $$ = std::make_unique<ast::BooleanLiteral>(@1, true); }
         | "false"                       { $$ = std::make_unique<ast::BooleanLiteral>(@1, false); }
-        | "[" expression "]"         { $$ = std::make_unique<ast::ArrayLiteral>(@1, $2); }
+        | "[" expression "]"            { $$ = std::make_unique<ast::ArrayLiteral>(@1, $2); }
         ;
 
 arithmetic_expression : expression "+" expression       { $$ = std::make_unique<ast::BinaryExpression>(@2, $1, $3, ast::Opcode::Add); }
